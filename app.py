@@ -215,6 +215,11 @@ def merge_prompts(analyses, precision_level, use_thinking=True):
 def generate_fused_prompt_directly(images, options_map, precision_level, use_thinking=True):
     try:
         start_time = time.time()
+        # Create a local client instance for thread safety
+        local_client = Ark(
+            api_key=API_KEY,
+            base_url="https://ark.cn-beijing.volces.com/api/v3"
+        )
         
         # Determine detail level
         word_count = "200"
@@ -260,6 +265,8 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
 - 只输出 [Chinese] 部分。
 - 绝对禁止输出任何备注、解释、自我纠正或开场白！
 - 绝对禁止输出“注：...”或“因为...”等内容。
+- 绝对禁止出现“(融合所有图片特征的Stable Diffusion中文提示词)”或类似标题。
+- 绝对禁止出现“(图片X环境色)”或类似引用来源的标注。
 - 如果标签之间有冲突（例如一张图是白天，一张是黑夜），请自动选择一个更具美感的方案进行融合，不要询问也不要解释。
 """
         content.append({"type": "text", "text": intro_text})
@@ -291,7 +298,10 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
 
             content.append({"type": "image_url", "image_url": {"url": base64_img}})
             content.append({"type": "text", "text": f"\n[图片 {idx+1} 的参考标签]：\n{aspects_str}\n"})
-
+        
+        print(f"DEBUG: Image encoding and prompt building took {time.time() - start_time:.2f}s")
+        api_start_time = time.time()
+        
         content.append({"type": "text", "text": "\n请开始直接生成最终融合后的中文提示词："})
 
         # Call Model
@@ -309,6 +319,7 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
             extra_body=extra_body
         )
         
+        print(f"DEBUG: API Call took {time.time() - api_start_time:.2f}s")
         return response.choices[0].message.content
 
     except Exception as e:

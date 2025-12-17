@@ -1000,6 +1000,7 @@
                 <button onclick="generatePrompts()" class="btn-generate">
                     <span id="btnText">生成提示词</span>
                     <div id="loadingSpinner" class="loader hidden"></div>
+                    <span id="timerText" class="hidden" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; margin-left: 0.5rem; opacity: 0.8; display: inline-block;">00:00</span>
                 </button>
             </div>
 
@@ -1594,6 +1595,8 @@
                 errorMsg.textContent = "生成出错: " + err.message;
                 errorMsg.classList.remove('hidden');
             } finally {
+                clearInterval(timerInterval); // Stop timer
+                timerText.classList.add('hidden'); // Hide timer
                 btn.disabled = false;
                 btnText.textContent = "生成提示词";
                 spinner.classList.add('hidden');
