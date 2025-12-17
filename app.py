@@ -282,13 +282,10 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
             aspects_desc = []
             for item in normalized_aspects:
                 aspect = item['id']
-                weight = item.get('weight', 1)
+                # Removed weight logic as requested by user - all tags are treated equally
                 if aspect in aspect_prompts:
                     desc = aspect_prompts[aspect]
-                    if str(weight) == '2':
-                         aspects_desc.append(f"【核心权重!!!】{aspect}: {desc}")
-                    else:
-                         aspects_desc.append(f"{aspect}: {desc}")
+                    aspects_desc.append(f"{aspect}: {desc}")
             
             aspects_str = "\n".join(aspects_desc) if aspects_desc else "无特定标签约束，请综合分析画面。"
 

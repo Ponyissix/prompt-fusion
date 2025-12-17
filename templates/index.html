@@ -85,6 +85,101 @@
             padding-bottom: 6rem;
         }
 
+        /* Tag Bar Section */
+        .tag-bar-section {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .tag-bar-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tag-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 40px;
+            padding: 0.5rem;
+            background: #FAFAFA;
+            border-radius: 6px;
+            border: 1px dashed var(--border);
+            transition: all 0.2s;
+        }
+
+        .tag-pool.drag-over {
+            background: rgba(225, 98, 89, 0.05);
+            border-color: var(--accent);
+        }
+
+        /* Draggable Tag */
+        .draggable-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.8rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .draggable-tag:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-color: var(--text-sub);
+        }
+
+        .draggable-tag:active {
+            cursor: grabbing;
+        }
+
+        .draggable-tag i {
+            margin-right: 6px;
+            color: var(--text-sub);
+            font-size: 0.75rem;
+        }
+
+        /* Assigned Tag Styles */
+        .draggable-tag.assigned {
+            background: #E16259;
+            color: white;
+            border-color: transparent;
+        }
+        
+        .draggable-tag.assigned i {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .draggable-tag.assigned.priority-high {
+            background: #2C2C2C;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .draggable-tag.assigned:hover {
+            opacity: 0.9;
+        }
+
         /* Upload Card Small - Grid Item */
         .upload-card-small {
             background: transparent;
@@ -211,85 +306,37 @@
             display: block;
         }
 
-        /* Tags - Notion Tag Style */
-        .tags-container {
+        /* Drop Zone Styles */
+        .card-drop-zone {
+            flex: 1;
+            background: #FAFAFA;
+            border: 2px dashed #E0E0E0;
+            border-radius: 6px;
+            padding: 0.5rem;
             display: flex;
             flex-wrap: wrap;
+            align-content: flex-start;
             gap: 0.4rem;
-            align-content: flex-start; /* Ensure tags pack nicely at top */
-            flex: 1; /* Allow container to take space */
-            overflow: visible; /* Show all tags */
-            position: relative; /* For selection box positioning */
-            user-select: none; /* Prevent text selection during drag */
+            transition: all 0.2s;
+            min-height: 100px;
         }
 
-        .selection-box {
-            position: absolute;
-            background: rgba(225, 98, 89, 0.2);
-            border: 1px solid #E16259;
-            pointer-events: none;
-            z-index: 100;
+        .card-drop-zone.drag-over {
+            background: rgba(225, 98, 89, 0.05);
+            border-color: var(--accent);
         }
 
-        .tag-checkbox {
-            display: none;
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
+        .card-drop-zone:empty::after {
+            content: "拖拽标签到此处";
+            display: block;
+            width: 100%;
+            text-align: center;
+            color: #CCC;
+            font-size: 0.8rem;
+            margin-top: 1rem;
             pointer-events: none;
         }
 
-        .tag-label {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.6rem;
-            background: rgba(227, 226, 224, 0.5); /* Default Gray */
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            border: 1px solid transparent;
-            user-select: none;
-            font-family: 'Space Mono', monospace;
-            position: relative;
-        }
-
-        .tag-label:hover {
-            background: rgba(227, 226, 224, 0.8);
-        }
-
-        /* State 1: Standard Selection (Weight 1) - Darker Red/Primary */
-        .tag-checkbox[data-weight="1"] + .tag-label {
-            background: #E16259; /* Was #FFE2DD */
-            color: white; /* Was #D44C47 */
-            font-weight: 600;
-        }
-
-        /* State 2: High Priority (Weight 2) - Even Darker/Black for contrast */
-        .tag-checkbox[data-weight="2"] + .tag-label {
-            background: #2C2C2C; /* Was #D44C47 */
-            color: white;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        .tag-checkbox[data-weight="2"] + .tag-label i {
-            color: white !important;
-        }
-        
-        /* Weight Indicator Badge */
-        .weight-badge {
-            font-size: 0.6rem;
-            margin-left: 4px;
-            opacity: 0.8;
-            display: none;
-        }
-        
-        .tag-checkbox[data-weight="2"] + .tag-label .weight-badge {
-            display: inline;
-        }
 
         /* Bottom Fixed Controls - Refined */
         .controls-section {
@@ -317,19 +364,7 @@
         }
 
         .controls-hint {
-            position: absolute;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.75rem;
-            color: var(--text-sub);
-            opacity: 0.8;
-            white-space: nowrap;
-            pointer-events: none;
-            background: rgba(255,255,255,0.8);
-            padding: 2px 8px;
-            border-radius: 12px;
-            backdrop-filter: blur(4px);
+            display: none !important;
         }
 
         .control-group {
@@ -815,6 +850,19 @@
     </nav>
 
     <div class="main-container">
+        <!-- Tag Bar Section -->
+        <div class="tag-bar-section">
+            <div class="tag-bar-header">
+                <span><i class="fa-solid fa-tags"></i> 可用标签池 (拖拽分配)</span>
+                <span style="font-size: 0.7rem; text-transform: none; opacity: 0.7;">拖拽至下方图片 · 已分配的标签将从此处消失</span>
+            </div>
+            <div id="tagPool" class="tag-pool" 
+                 ondrop="handleTagDrop(event, -1)" 
+                 ondragover="handleDragOver(event)">
+                <!-- Tags will be rendered here -->
+            </div>
+        </div>
+
         <!-- Image Grid (including Add Card) -->
         <div id="imageContainer" class="content-grid" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
             <!-- Static Upload Card will be injected via JS -->
@@ -860,9 +908,6 @@
 
         <!-- Controls Section -->
         <div class="controls-section">
-            <div class="controls-hint">
-                <i class="fa-solid fa-circle-info"></i> 点击/框选选中标签 · Shift+点击提高权重
-            </div>
             <div class="control-group">
                 <div class="label-group">
                     <i class="fa-solid fa-sliders"></i>
@@ -1046,44 +1091,40 @@
             }
         }
 
-        // --- Drag and Drop Logic ---
+        // --- Drag and Drop Logic (File Upload) ---
         function handleDragOver(event) {
             event.preventDefault();
             event.stopPropagation();
             event.dataTransfer.dropEffect = 'copy';
             
-            // Optional: Add visual feedback
-            const container = document.getElementById('imageContainer');
-            container.style.border = '2px dashed #E16259';
-            container.style.backgroundColor = 'rgba(225, 98, 89, 0.05)';
+            // Visual feedback handled by CSS :hover or drag-over class toggling manually if needed
+            // For now, relying on native behavior or simple CSS
+            const target = event.currentTarget;
+            target.classList.add('drag-over');
         }
 
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            const container = document.getElementById('imageContainer');
-            container.style.border = 'none';
-            container.style.backgroundColor = 'transparent';
-        }
-
-        // Add dragleave listener to container since it's not inline
-        document.getElementById('imageContainer').addEventListener('dragleave', handleDragLeave);
+        // Remove drag-over class on leave
+        document.addEventListener('dragleave', function(e) {
+            if (e.target.classList && e.target.classList.contains('drag-over')) {
+                e.target.classList.remove('drag-over');
+            }
+        });
 
         function handleDrop(event) {
             event.preventDefault();
             event.stopPropagation();
             
-            // Remove visual feedback
-            const container = document.getElementById('imageContainer');
-            container.style.border = 'none';
-            container.style.backgroundColor = 'transparent';
+            // Cleanup visual feedback
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 
-            const files = Array.from(event.dataTransfer.files);
-            const imageFiles = files.filter(file => file.type.startsWith('image/'));
-            
-            if (imageFiles.length === 0) return;
-
-            processFiles(imageFiles);
+            // Check if it's a file drop
+            if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+                const files = Array.from(event.dataTransfer.files);
+                const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                if (imageFiles.length > 0) {
+                    processFiles(imageFiles);
+                }
+            }
         }
 
         function processFiles(files) {
@@ -1097,7 +1138,7 @@
                         aspects: {...defaultAspects}, 
                         previewUrl: e.target.result
                     });
-                    renderImages();
+                    renderUI(); // Render both Tag Bar and Images
                 };
                 reader.readAsDataURL(file);
             });
@@ -1113,44 +1154,131 @@
         function removeImage(index) {
             imageDataList.splice(index, 1);
             // Clean up hidden inputs
-            const oldInput = document.getElementById(`prompt-data-${index}`);
-            if (oldInput) oldInput.remove();
-            // Re-index remaining inputs (simplified: just clear all and re-render will create new ones on next gen)
-            // Ideally we should shift indices, but re-rendering clears the UI. 
-            // Since generation depends on current list, we just need to ensure UI is consistent.
-            // The simplest way for this lightweight app is to clear previous generation data when list changes.
             document.querySelectorAll('input[id^="prompt-data-"]').forEach(el => el.remove());
+            renderUI();
+        }
+
+        // --- Tag Logic ---
+
+        function removeTag(index, aspectId, event) {
+            event.stopPropagation(); // Prevent drag start or other events
+            const item = imageDataList[index];
+            if (item.aspects[aspectId]) {
+                delete item.aspects[aspectId];
+                renderUI();
+            }
+        }
+
+        function handleTagDragStart(event, tagId, sourceIndex) {
+            // Set allowed effects
+            event.dataTransfer.effectAllowed = 'copyMove';
             
+            // Set drag data
+            const dragData = JSON.stringify({
+                tagId: tagId,
+                sourceIndex: sourceIndex // -1 means from Tag Pool, >=0 means from Image Card
+            });
+            event.dataTransfer.setData('application/json', dragData);
+            event.dataTransfer.setData('text/plain', dragData); // Fallback
+            
+            // Visual feedback
+            setTimeout(() => {
+                event.target.style.opacity = '0.5';
+            }, 0);
+        }
+
+        function handleTagDragEnd(event) {
+            event.target.style.opacity = '1';
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function handleTagDrop(event, targetIndex) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+            // Try to get JSON data first, fall back to text
+            let dataStr = event.dataTransfer.getData('application/json');
+            if (!dataStr) {
+                dataStr = event.dataTransfer.getData('text/plain');
+            }
+            
+            if (!dataStr) return; 
+
+            try {
+                const data = JSON.parse(dataStr);
+                
+                // Validate if it's our tag data
+                if (!data.tagId) return;
+
+                const tagId = data.tagId;
+                const sourceIndex = parseInt(data.sourceIndex);
+                const targetIdx = parseInt(targetIndex);
+
+                console.log(`Dropping tag ${tagId} from ${sourceIndex} to ${targetIdx}`);
+
+                // Case 1: Dropped onto same location -> Do nothing
+                if (sourceIndex === targetIdx) return;
+
+                // Case 2: From Pool (-1) to Card (>=0)
+                if (sourceIndex === -1 && targetIdx >= 0) {
+                    imageDataList[targetIdx].aspects[tagId] = 1;
+                }
+                
+                // Case 3: From Card (>=0) to Pool (-1)
+                else if (sourceIndex >= 0 && targetIdx === -1) {
+                    delete imageDataList[sourceIndex].aspects[tagId];
+                }
+
+                // Case 4: From Card A to Card B
+                else if (sourceIndex >= 0 && targetIdx >= 0) {
+                    // Remove from Source
+                    const weight = imageDataList[sourceIndex].aspects[tagId];
+                    delete imageDataList[sourceIndex].aspects[tagId];
+                    
+                    // Add to Target
+                    imageDataList[targetIdx].aspects[tagId] = weight;
+                }
+
+                renderUI();
+
+            } catch (e) {
+                console.error("Invalid drag data", e);
+            }
+        }
+
+        function renderUI() {
+            renderTagBar();
             renderImages();
         }
 
-        function toggleAspect(index, aspectId, event) {
-            const item = imageDataList[index];
-            const currentWeight = item.aspects[aspectId] || 0;
-            
-            let newWeight = 0;
-            
-            if (event.shiftKey) {
-                // Shift + Click behavior -> Toggle High Priority
-                // If High (2) -> Normal (1)
-                // If Normal (1) or Off (0) -> High (2)
-                if (currentWeight === 2) newWeight = 1;
-                else newWeight = 2;
-            } else {
-                // Normal Click behavior -> Toggle Selection
-                // If Off (0) -> Normal (1)
-                // If Normal (1) or High (2) -> Off (0)
-                if (currentWeight === 0) newWeight = 1;
-                else newWeight = 0;
+        function renderTagBar() {
+            const container = document.getElementById('tagPool');
+            container.innerHTML = '';
+
+            // Find all assigned tags across all images
+            const assignedTags = new Set();
+            imageDataList.forEach(item => {
+                Object.keys(item.aspects).forEach(key => assignedTags.add(key));
+            });
+
+            // Filter available tags
+            const availableAspects = aspects.filter(a => !assignedTags.has(a.id));
+
+            if (availableAspects.length === 0) {
+                container.innerHTML = '<span style="color:#ccc; font-size:0.8rem; width:100%; text-align:center; padding:0.5rem;">所有标签已分配完毕</span>';
+                return;
             }
-            
-            if (newWeight === 0) {
-                delete item.aspects[aspectId];
-            } else {
-                item.aspects[aspectId] = newWeight;
-            }
-            
-            renderImages(); // Re-render to update UI states
+
+            availableAspects.forEach(aspect => {
+                const tag = document.createElement('div');
+                tag.className = 'draggable-tag';
+                tag.draggable = true;
+                tag.innerHTML = `<i class="fa-solid ${aspect.icon}"></i> ${aspect.id}`;
+                tag.ondragstart = (e) => handleTagDragStart(e, aspect.id, -1);
+                tag.ondragend = handleTagDragEnd;
+                container.appendChild(tag);
+            });
         }
 
         function renderImages() {
@@ -1166,28 +1294,30 @@
                 <span style="font-weight: 600; font-size: 0.9rem;">添加图片</span>
                 <span style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.7;">支持多张批量分析</span>
             `;
+            // Allow dropping files on upload card too
+            uploadCard.ondrop = handleDrop;
+            uploadCard.ondragover = handleDragOver;
             container.appendChild(uploadCard);
             
             imageDataList.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = "image-card";
                 
-                // Generate checkbox HTML
-                const checkboxesHtml = aspects.map(aspect => {
-                    const weight = item.aspects[aspect.id] || 0;
-                    // We use data-weight attribute on the input to style the adjacent label
+                // Render Assigned Tags
+                const assignedTagsHtml = Object.entries(item.aspects).map(([tagId, weight]) => {
+                    const aspect = aspects.find(a => a.id === tagId) || {icon: 'fa-tag'};
+                    
                     return `
-                        <input type="checkbox" id="cb-${index}-${aspect.id}" 
-                               value="${aspect.id}" 
-                               class="tag-checkbox" 
-                               ${weight > 0 ? 'checked' : ''}
-                               data-weight="${weight}"
-                               onclick="event.preventDefault(); toggleAspect(${index}, '${aspect.id}', event);">
-                        <label for="cb-${index}-${aspect.id}" class="tag-label">
-                            <i class="fa-solid ${aspect.icon}" style="margin-right:6px; font-size:0.7rem;"></i>
-                            ${aspect.id}
-                            ${weight === 2 ? '<span class="weight-badge"><i class="fa-solid fa-star"></i></span>' : ''}
-                        </label>
+                        <div class="draggable-tag assigned" 
+                             draggable="true" 
+                             ondragstart="handleTagDragStart(event, '${tagId}', ${index})"
+                             ondragend="handleTagDragEnd(event)"
+                             onclick="removeTag(${index}, '${tagId}', event)"
+                             title="点击删除标签 · 拖拽移动">
+                            <i class="fa-solid ${aspect.icon}"></i>
+                            ${tagId}
+                            <i class="fa-solid fa-times" style="margin-left:6px; margin-right:0; font-size:0.6rem; opacity:0.6;"></i>
+                        </div>
                     `;
                 }).join('');
 
@@ -1199,16 +1329,19 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="file-name" title="${item.file.name}">
-                            <i class="fa-regular fa-file-image"></i> ${item.file.name}
-                        </div>
-                        <span class="aspect-label">
-                            选择参考维度 
-                        </span>
-                        <div class="tags-container" data-index="${index}">
-                    ${checkboxesHtml}
-                </div>
+                    <div class="file-name" title="${item.file.name}">
+                        <i class="fa-regular fa-file-image"></i> ${item.file.name}
                     </div>
+                    <span class="aspect-label">
+                        分配的标签
+                    </span>
+                    <div class="card-drop-zone" 
+                         data-index="${index}"
+                         ondrop="handleTagDrop(event, ${index})" 
+                         ondragover="handleDragOver(event)">
+                        ${assignedTagsHtml}
+                    </div>
+                </div>
                 `;
                 container.appendChild(div);
             });
@@ -1216,7 +1349,7 @@
 
         // Initialize layout with upload card
         window.onload = function() {
-            renderImages();
+            renderUI();
         };
 
         const precisionLabels = {
@@ -1402,7 +1535,7 @@
             });
         }
 
-        // --- Box Selection Logic ---
+        // --- Box Selection Logic REMOVED ---
         function toggleThinking() {
             const checkbox = document.getElementById('thinkingCheck');
             const visualBox = document.getElementById('thinkingCheckbox');
@@ -1420,123 +1553,6 @@
                 icon.style.opacity = '0';
             }
         }
-
-        let selectionState = {
-            isSelecting: false,
-            startX: 0,
-            startY: 0,
-            container: null,
-            cardIndex: -1,
-            selectionBox: null
-        };
-
-        document.addEventListener('mousedown', function(e) {
-            // Check if clicking inside card body (not just tags container)
-            const cardBody = e.target.closest('.card-body');
-            if (!cardBody) return;
-            
-            // Find the tags container within this card
-            const container = cardBody.querySelector('.tags-container');
-            if (!container) return;
-
-            // Don't start if clicking on a tag directly or delete button
-            if (e.target.closest('.tag-label') || e.target.closest('.delete-btn')) return;
-
-            // Start selection
-            selectionState.isSelecting = true;
-            selectionState.container = container;
-            selectionState.cardIndex = parseInt(container.dataset.index);
-
-            // Use page coordinates for initial start point to handle scrolling better
-            // But we need relative to container for the box drawing
-            const rect = container.getBoundingClientRect();
-            
-            // Allow starting selection from anywhere in the card body
-            // We project the start point relative to the tags container
-            selectionState.startX = e.clientX - rect.left;
-            selectionState.startY = e.clientY - rect.top;
-
-            // Create box
-            const box = document.createElement('div');
-            box.className = 'selection-box';
-            // Initial position might be "outside" visual container if clicked in padding, 
-            // but CSS overflow:visible handles it.
-            box.style.left = selectionState.startX + 'px';
-            box.style.top = selectionState.startY + 'px';
-            box.style.width = '0px';
-            box.style.height = '0px';
-            container.appendChild(box);
-            selectionState.selectionBox = box;
-        });
-
-        document.addEventListener('mousemove', function(e) {
-            if (!selectionState.isSelecting) return;
-            
-            const container = selectionState.container;
-            const rect = container.getBoundingClientRect();
-            
-            // Calculate relative coordinates
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
-            
-            const width = Math.abs(currentX - selectionState.startX);
-            const height = Math.abs(currentY - selectionState.startY);
-            const left = Math.min(currentX, selectionState.startX);
-            const top = Math.min(currentY, selectionState.startY);
-            
-            const box = selectionState.selectionBox;
-            box.style.width = width + 'px';
-            box.style.height = height + 'px';
-            box.style.left = left + 'px';
-            box.style.top = top + 'px';
-        });
-
-        document.addEventListener('mouseup', function(e) {
-            if (!selectionState.isSelecting) return;
-            
-            const box = selectionState.selectionBox;
-            const container = selectionState.container;
-            const boxRect = box.getBoundingClientRect();
-            const item = imageDataList[selectionState.cardIndex];
-            
-            // Find intersecting tags
-            const labels = container.querySelectorAll('.tag-label');
-            let changed = false;
-
-            labels.forEach(label => {
-                const labelRect = label.getBoundingClientRect();
-                const checkboxId = label.getAttribute('for');
-                const checkbox = document.getElementById(checkboxId);
-                const aspectId = checkbox.value;
-
-                // Simple collision detection
-                if (!(boxRect.right < labelRect.left || 
-                      boxRect.left > labelRect.right || 
-                      boxRect.bottom < labelRect.top || 
-                      boxRect.top > labelRect.bottom)) {
-                    
-                    // Toggle Logic:
-                    // If selected (weight > 0) -> Unselected (0)
-                    // If unselected (weight 0) -> Selected (1)
-                    if (item.aspects[aspectId]) {
-                        delete item.aspects[aspectId];
-                    } else {
-                        item.aspects[aspectId] = 1;
-                    }
-                    changed = true;
-                }
-            });
-
-            // Cleanup
-            if (box) box.remove();
-            selectionState.isSelecting = false;
-            selectionState.container = null;
-            selectionState.selectionBox = null;
-            
-            if (changed) {
-                renderImages();
-            }
-        });
     </script>
     <script>
         // Force light mode via JS immediately
