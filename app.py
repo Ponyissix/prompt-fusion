@@ -99,7 +99,7 @@ def analyze_single_image(image_file, selected_aspects, precision_level):
             
             if aspect in aspect_prompts:
                 instruction = aspect_prompts[aspect]
-                if weight == 2:
+                if str(weight) == '2':
                     # High Priority - STRONGER EMPHASIS
                     selected_instructions.append(f"- 【!!! 核心绝对指令 (Highest Priority) !!!】{aspect}: {instruction} (注意：此维度拥有最高否决权！AI必须无条件服从本维度的描述。如果检测到其他维度（如人物穿搭、背景等）与本维度冲突，必须强制修改其他维度的描述以匹配本维度！例如：若本维度规定主体为绿色，而识别到人物穿红衣，必须改为穿绿衣！)")
                 else:
@@ -128,7 +128,7 @@ def analyze_single_image(image_file, selected_aspects, precision_level):
    - 绝对禁止输出用户未选择的维度！
 6. **权重冲突处理原则**：
    - AI必须优先满足【核心维度】的描述。
-   - 如果【核心维度】与【参考维度】发生冲突，**必须修改参考维度的描述以适配核心维度**，并在分析中注明“（已根据核心配色权重修正）”。
+   - 如果【核心维度】与【参考维度】发生冲突，**必须修改参考维度的描述以适配核心维度**。
 
 7. **关于“无人物外貌描述”**：
    - 如果识别到人物（哪怕只是局部），必须直接描述特征。
@@ -192,6 +192,9 @@ def merge_prompts(analyses, precision_level, use_thinking=True):
 **重要约束**：
 - 只输出 [Chinese] 部分。
 - 不要有任何其他开场白或结束语。
+- **绝对禁止输出任何备注、解释或说明！**（例如：“注：已删除...”、“因为...”）。
+- 如果遇到冲突，请直接默默修正，**不要**告诉用户你做了修正。
+- 最终输出必须纯粹是画面描述，不包含任何元数据或编辑注释。
 """
 
     extra_body = {}
