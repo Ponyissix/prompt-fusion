@@ -873,6 +873,14 @@
                 </div>
             </div>
 
+            <!-- Deep Thinking Toggle -->
+            <div class="control-group" style="flex: 0 0 auto; margin-left: 1rem; border-left: 1px solid var(--border); padding-left: 1rem;">
+                <div class="label-group" style="gap: 0.5rem; cursor: pointer;" onclick="document.getElementById('thinkingCheck').click()">
+                    <input type="checkbox" id="thinkingCheck" checked style="accent-color: var(--text-main); width: 16px; height: 16px; cursor: pointer;">
+                    <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考</span>
+                </div>
+            </div>
+
             <button onclick="generatePrompts()" class="btn-generate">
                 <span id="btnText">生成提示词</span>
                 <div id="loadingSpinner" class="loader hidden"></div>
@@ -1231,6 +1239,7 @@
             const formData = new FormData();
             const optionsMap = {};
             const precisionLevel = document.getElementById('precisionRange').value;
+            const enableThinking = document.getElementById('thinkingCheck').checked;
 
             // Build optionsMap from imageDataList
             imageDataList.forEach((item, index) => {
@@ -1244,6 +1253,7 @@
 
             formData.append('options', JSON.stringify(optionsMap));
             formData.append('precision', precisionLevel);
+            formData.append('thinking', enableThinking);
 
 
             try {

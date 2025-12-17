@@ -164,7 +164,7 @@ def analyze_single_image(image_file, selected_aspects, precision_level):
         print(f"Error analyzing image {image_file.filename}: {e}")
         return f"Error: {str(e)}"
 
-def merge_prompts(analyses, precision_level):
+def merge_prompts(analyses, precision_level, use_thinking=True):
     # If only one analysis, just format it
     combined_analysis = "\n\n---\n\n".join(analyses)
     
@@ -194,14 +194,18 @@ def merge_prompts(analyses, precision_level):
 - 不要有任何其他开场白或结束语。
 """
 
+    extra_body = {}
+    if use_thinking:
+        extra_body["thinking"] = {"type": "enabled"}
+    else:
+        extra_body["thinking"] = {"type": "disabled"}
+
     response = client.chat.completions.create(
         model=MODEL_ID,
         messages=[
             {"role": "user", "content": system_prompt}
         ],
-        extra_body={
-            "thinking": {"type": "enabled"}
-        }
+        extra_body=extra_body
     )
     return response.choices[0].message.content
 
@@ -217,6 +221,8 @@ def generate():
     images = request.files.getlist('images')
     options_str = request.form.get('options')
     precision = request.form.get('precision', '2')
+    # Parse boolean from string "true"/"false"
+    use_thinking = request.form.get('thinking', 'true').lower() == 'true'
     
     if not options_str:
         return jsonify({'error': 'No options provided'}), 400
@@ -247,15 +253,28 @@ def generate():
 
     # Merge prompts or use single result
     try:
-        if len(individual_prompts) == 1 and individual_prompts[0] and "Error" not in individual_prompts[0]:
+        # Check if any individual analysis failed with SetLimitExceeded
+        limit_exceeded = False
+        for prompt in individual_prompts:
+            if prompt and "SetLimitExceeded" in str(prompt):
+                limit_exceeded = True
+                break
+        
+        if limit_exceeded:
+             final_prompt = "【系统提示】您的火山引擎账户余额不足或已达到“安全体验模式”的限额。\n请前往火山引擎控制台(console.volcengine.com)充值或调整模型限额配置。\n(错误代码: SetLimitExceeded)"
+        elif len(individual_prompts) == 1 and individual_prompts[0] and "Error" not in individual_prompts[0]:
             # Optimization: Skip merge step for single image
             raw_result = individual_prompts[0]
             # Convert tags to match final format
             final_prompt = raw_result.replace("[Chinese Analysis]", "").strip()
         else:
-            final_prompt = merge_prompts(individual_prompts, precision).replace("[Chinese]", "").strip()
+            final_prompt = merge_prompts(individual_prompts, precision, use_thinking).replace("[Chinese]", "").strip()
     except Exception as e:
-        final_prompt = f"Error merging prompts: {str(e)}"
+        error_str = str(e)
+        if "SetLimitExceeded" in error_str:
+            final_prompt = "【系统提示】您的火山引擎账户余额不足或已达到“安全体验模式”的限额。\n请前往火山引擎控制台(console.volcengine.com)充值或调整模型限额配置。\n(错误代码: SetLimitExceeded)"
+        else:
+            final_prompt = f"Error merging prompts: {error_str}"
 
     return jsonify({
         'final_prompt': final_prompt,
