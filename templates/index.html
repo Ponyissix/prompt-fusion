@@ -1252,7 +1252,17 @@
                     body: formData
                 });
 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    // JSON parse failed, likely a 504 Gateway Timeout or 500 Server Error from Vercel
+                    if (response.status === 504) {
+                        throw new Error("生成超时 (Gateway Timeout)。\n由于开启了“深度思考”模式，多图处理时间可能超过了服务器限制。\n建议：\n1. 尝试减少一次上传的图片数量\n2. 或者分批生成");
+                    } else {
+                        throw new Error(`服务器响应错误 (${response.status})。可能是服务器暂时繁忙或崩溃。`);
+                    }
+                }
 
                 if (!response.ok) {
                     throw new Error(data.error || "生成失败");
