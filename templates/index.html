@@ -221,7 +221,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
-            margin-bottom: 240px; /* Increased bottom margin to prevent image card from being blocked by fixed controls */
+            margin-bottom: 3rem; /* Reduced from 240px to 3rem since result container handles separation now */
             grid-auto-rows: 1fr; /* Make all rows same height */
         }
 
@@ -566,7 +566,7 @@
             border-top: 1px solid var(--border);
             padding-top: 3rem;
             margin-top: 3rem;
-            margin-bottom: 200px; /* Add enough space at the bottom to prevent obstruction by fixed controls */
+            margin-bottom: 300px; /* Increased to 300px to ensure content is not hidden behind the fixed control bar */
         }
 
         .result-header {
