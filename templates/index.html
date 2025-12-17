@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Removed color-scheme meta to prevent potential conflicts, handling via CSS -->
+    <title>提示词小偷</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .hidden {
+            display: none !important;
+        }
+
+        :root {
+            --bg-body: #F7F6F3;
+            --bg-card: #FFFFFF;
+            --text-main: #37352F;
+            --text-sub: #787774;
+            --border: #E9E9E7;
+            --primary: #2C2C2C; 
+            --accent: #E16259; 
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            min-height: 100%;
+            background-color: #F7F6F3;
+        }
+
+        body {
+            background-color: #F7F6F3;
+            color: #37352F;
+            font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* Navbar - Notion-like Minimalist Header */
+        .navbar {
+            background: #ffffff !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .nav-title {
+            font-family: 'Work Sans', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .main-container {
+            max-width: 960px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            padding-bottom: 6rem;
+        }
+
+        /* Upload Card Small - Grid Item */
+        .upload-card-small {
+            background: transparent;
+            border: 2px dashed #D3D1CB;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* height: 420px; Removed strict height */
+            min-height: 420px; /* Use min-height instead */
+            width: 100%;   /* Fill grid cell */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-sub);
+            box-sizing: border-box; /* Ensure border is included in height */
+        }
+
+        .upload-card-small:hover {
+            background: rgba(235, 236, 237, 0.3);
+            border-color: var(--text-main);
+            color: var(--text-main);
+        }
+        
+        /* Grid Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            align-items: stretch; /* Ensure all items in a row stretch to the same height */
+        }
+
+        /* Image Card - Retro Polaroid/Card Style */
+        .image-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s;
+            /* height: 420px; Removed strict height */
+            min-height: 420px; /* Use min-height instead */
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box; /* Ensure border is included in height */
+        }
+
+        .card-body {
+            padding: 1rem;
+            flex: 1;
+            /* overflow-y: auto; Removed scrolling */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Custom scrollbar for card body */
+        .card-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .card-body::-webkit-scrollbar-thumb {
+            background: #E0E0E0;
+            border-radius: 2px;
+        }
+
+        .img-wrapper {
+            position: relative;
+            height: 200px;
+            flex-shrink: 0; /* Prevent image from shrinking */
+            background: #F0F0F0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(10%) contrast(1.05); /* Slight retro filter */
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0,0,0,0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            color: var(--text-sub);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #EB5757;
+            background: white;
+        }
+
+        .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .aspect-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-sub);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Tags - Notion Tag Style */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            align-content: flex-start; /* Ensure tags pack nicely at top */
+            flex: 1; /* Allow container to take space */
+            overflow: visible; /* Show all tags */
+        }
+
+        .tag-checkbox {
+            display: none;
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .tag-label {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.6rem;
+            background: rgba(227, 226, 224, 0.5); /* Default Gray */
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+            user-select: none;
+            font-family: 'Space Mono', monospace;
+            position: relative;
+        }
+
+        .tag-label:hover {
+            background: rgba(227, 226, 224, 0.8);
+        }
+
+        /* State 1: Standard Selection (Weight 1) - Light Red */
+        .tag-checkbox[data-weight="1"] + .tag-label {
+            background: #FFE2DD;
+            color: #D44C47;
+            font-weight: 600;
+        }
+
+        /* State 2: High Priority (Weight 2) - Dark Red */
+        .tag-checkbox[data-weight="2"] + .tag-label {
+            background: #D44C47;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(212, 76, 71, 0.3);
+        }
+        
+        .tag-checkbox[data-weight="2"] + .tag-label i {
+            color: white !important;
+        }
+        
+        /* Weight Indicator Badge */
+        .weight-badge {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.8;
+            display: none;
+        }
+        
+        .tag-checkbox[data-weight="2"] + .tag-label .weight-badge {
+            display: inline;
+        }
+
+        /* Bottom Fixed Controls - Refined */
+        .controls-section {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 540px; /* Fixed Width */
+            min-width: 540px; /* Enforce Fixed Width */
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.06);
+            padding: 0.6rem 0.8rem 0.6rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Ensure spacing */
+            gap: 0; /* Remove gap, use space-between */
+            z-index: 100;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            border-radius: 100px;
+            box-sizing: border-box; /* Fix width calculation */
+        }
+
+        .controls-hint {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            opacity: 0.8;
+            white-space: nowrap;
+            pointer-events: none;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 8px;
+            border-radius: 12px;
+            backdrop-filter: blur(4px);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 1; /* Take remaining space */
+        }
+
+        .label-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .value-tag {
+            font-size: 0.75rem;
+            background: #F0F0F0;
+            color: var(--text-main);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-weight: 600;
+            min-width: 48px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        /* Custom Range Slider Styling - Standard Model */
+        input[type=range] {
+            -webkit-appearance: none; /* Required */
+            width: 140px;
+            height: 20px; /* Match thumb height area for better hit target */
+            background: transparent; /* Essential */
+            cursor: pointer;
+            margin: 0; /* Remove any default margins */
+            display: block; /* Ensure block layout behavior */
+        }
+
+        /* Track Styles */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #E0E0E0;
+            border-radius: 2px;
+        }
+        
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #E0E0E0;
+            border-radius: 2px;
+        }
+
+        /* Thumb Styles */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid var(--accent);
+            cursor: pointer;
+            margin-top: -6px; /* (TrackHeight 4px - ThumbHeight 16px) / 2 = -6px */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border: 4px solid var(--accent); /* Firefox border works differently */
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+            box-sizing: border-box; /* Essential for Firefox size calc */
+        }
+        
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-generate {
+            width: auto;
+            margin-top: 0;
+            height: 40px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0 1.5rem;
+            background: var(--text-main); /* Black button for contrast */
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-1px);
+            background: black;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .btn-generate:disabled {
+            background: #666; /* Darker grey for visibility */
+            color: rgba(255, 255, 255, 0.9); /* Visible text */
+            cursor: wait;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.9;
+        }
+
+        /* Hidden elements that shouldn't affect layout */
+        .range-labels, .slider-header, .slider-title, .slider-value, .slider-label-hint {
+            display: none !important;
+        }
+
+        .btn-generate:hover {
+            background: #000000;
+        }
+
+        /* Results - Document Style */
+        .result-container {
+            border-top: 1px solid var(--border);
+            padding-top: 3rem;
+            margin-top: 3rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        .prompt-group {
+            margin-bottom: 3rem;
+        }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .prompt-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(227, 226, 224, 0.5);
+            color: var(--text-main);
+        }
+
+        .prompt-content {
+            font-family: 'Space Mono', monospace; /* Typewriter feel */
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        /* Individual Results */
+        .individual-item {
+            border-left: 2px solid var(--border);
+            padding-left: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .individual-item h4 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin: 0 0 0.5rem 0;
+        }
+
+        /* Individual Analysis Hover Card */
+        .image-card {
+            position: relative;
+        }
+
+        .analysis-hover-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            padding: 1rem;
+            box-sizing: border-box;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .image-card:hover .analysis-hover-card.has-content {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .analysis-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            margin-bottom: 0.5rem;
+            font-family: 'Space Mono', monospace;
+            padding-right: 0.2rem;
+        }
+        
+        /* Custom scrollbar for hover card */
+        .analysis-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .analysis-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 2px;
+        }
+
+        .hover-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .hover-copy-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.2rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .hover-copy-btn:hover {
+            background: black;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 2px solid white;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .close-modal-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-sub);
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .close-modal-btn:hover {
+            background: rgba(0,0,0,0.05);
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+            background: #FAFAFA;
+        }
+
+        .modal-image-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            background: #f0f0f0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+        
+        .modal-section-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .copy-btn-small {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--text-sub);
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn-small:hover {
+            background: var(--bg-body);
+            color: var(--text-main);
+            border-color: var(--text-sub);
+        }
+
+        .copy-btn-modal {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .copy-btn-modal:hover {
+            background: black;
+        }
+        
+        .image-preview {
+            cursor: pointer; /* Indicate clickable */
+            transition: transform 0.2s;
+        }
+        
+        .image-preview:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body style="background-color: #F7F6F3; color: #37352F;">
+    <nav class="navbar" style="background-color: #FFFFFF;">
+        <div class="nav-content">
+            <!-- Custom Rubber Hose / Retro Cartoon Style Thief Icon (Vintage Disney Style) -->
+            <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Cap (Newsboy style) -->
+                <path d="M15 35 C10 35, 5 30, 10 20 C15 10, 85 10, 90 20 C95 30, 90 35, 85 35 Z" fill="black"/>
+                <path d="M10 35 C10 35, 50 48, 90 35" fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/> <!-- Cap Brim -->
+                
+                <!-- Face Shape (Round) -->
+                <path d="M20 40 C15 55, 15 85, 50 85 C85 85, 85 55, 80 40" fill="white" stroke="black" stroke-width="3"/>
+                
+                <!-- Ears (Round Mouse-ish ears) -->
+                <circle cx="15" cy="55" r="12" fill="white" stroke="black" stroke-width="3"/>
+                <circle cx="85" cy="55" r="12" fill="white" stroke="black" stroke-width="3"/>
+                <circle cx="15" cy="55" r="7" fill="none" stroke="black" stroke-width="1"/> <!-- Inner ear -->
+                <circle cx="85" cy="55" r="7" fill="none" stroke="black" stroke-width="1"/> <!-- Inner ear -->
+
+                <!-- Mask (Bandit Mask) -->
+                <path d="M19 50 C30 42, 70 42, 81 50 C85 58, 85 68, 81 72 C70 65, 30 65, 19 72 C15 68, 15 58, 19 50 Z" fill="black"/>
+                
+                <!-- Eyes (Pie Eyes - White shapes on black mask with black wedges) -->
+                <!-- Left Eye -->
+                <ellipse cx="35" cy="58" rx="8" ry="10" fill="white"/>
+                <path d="M35 58 L 40 63 L 42 55 Z" fill="black"/> <!-- Pie cut -->
+                
+                <!-- Right Eye -->
+                <ellipse cx="65" cy="58" rx="8" ry="10" fill="white"/>
+                <path d="M65 58 L 60 63 L 58 55 Z" fill="black"/> <!-- Pie cut -->
+
+                <!-- Nose -->
+                <ellipse cx="50" cy="76" rx="6" ry="4" fill="black"/>
+                
+                <!-- Mouth (Big Smile) -->
+                <path d="M35 82 Q 50 92 65 82" fill="none" stroke="black" stroke-width="3" stroke-linecap="round"/>
+                <path d="M33 80 L 35 82 M 67 80 L 65 82" fill="none" stroke="black" stroke-width="3" stroke-linecap="round"/> <!-- Cheek marks -->
+
+                <!-- Hand holding Money Bag -->
+                <g transform="translate(75, 75) rotate(-10)">
+                    <!-- Bag -->
+                    <path d="M0 0 C -10 10, 20 25, 10 10" fill="white" stroke="black" stroke-width="3"/>
+                    <text x="0" y="12" font-family="sans-serif" font-weight="bold" font-size="12" fill="black">$</text>
+                    <!-- Glove Hand -->
+                    <circle cx="5" cy="-5" r="8" fill="white" stroke="black" stroke-width="2"/>
+                    <path d="M0 -5 L 10 -5" stroke="black" stroke-width="1"/>
+                </g>
+            </svg>
+            <h1 class="nav-title">提示词小偷</h1>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- Image Grid (including Add Card) -->
+        <div id="imageContainer" class="content-grid">
+            <!-- Static Upload Card will be injected via JS -->
+        </div>
+        
+        <!-- Hidden file input -->
+        <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+
+        <!-- Modal -->
+        <div id="promptModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>单图提示词分析</h3>
+                    <button class="close-modal-btn" onclick="closeModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" class="modal-image-preview" src="" alt="Preview">
+                    <div class="modal-section">
+                        <div class="modal-section-header">
+                            <span class="modal-section-title"><i class="fa-solid fa-language"></i> 中文结构化解析</span>
+                            <button class="copy-btn-small" onclick="copyModalSection('modalChineseContent')">复制</button>
+                        </div>
+                        <pre id="modalChineseContent" class="prompt-content" style="white-space: pre-wrap; font-size: 0.85rem; color: var(--text-main); margin-top: 0;"></pre>
+                    </div>
+                    
+                    <div class="modal-section" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                        <div class="modal-section-header">
+                            <span class="modal-section-title"><i class="fa-solid fa-terminal"></i> 英文提示词 (SD/MJ)</span>
+                            <button class="copy-btn-small" onclick="copyModalSection('modalEnglishContent')">复制</button>
+                        </div>
+                        <pre id="modalEnglishContent" class="prompt-content" style="white-space: pre-wrap; font-size: 0.85rem; color: var(--text-main); margin-top: 0;"></pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="copy-btn-modal" onclick="copyFullModalContent()">
+                        <i class="fa-regular fa-copy"></i> 复制全部
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <div class="controls-hint">
+                <i class="fa-solid fa-circle-info"></i> 点击标签选中 / Shift+点击提高标签权重
+            </div>
+            <div class="control-group">
+                <div class="label-group">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>精确度</span>
+                </div>
+                <div class="slider-wrapper">
+                    <input type="range" id="precisionRange" min="1" max="3" value="2" step="1">
+                    <span id="precisionValue" class="value-tag">标准</span>
+                </div>
+            </div>
+
+            <button onclick="generatePrompts()" class="btn-generate">
+                <span id="btnText">生成提示词</span>
+                <div id="loadingSpinner" class="loader hidden"></div>
+            </button>
+            <p id="errorMessage" style="display: none; position: absolute; bottom: 100%; left: 0; background: #ffe2dd; color: #d44c47; padding: 0.5rem 1rem; border-radius: 4px; width: 100%; text-align: center; margin-bottom: 10px;" class="hidden"></p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="result-container hidden">
+            <div class="result-header">
+                <h2 class="result-title">最终融合提示词</h2>
+            </div>
+            
+            <div class="result-body">
+                <!-- Chinese Prompt -->
+                <div class="prompt-group">
+                    <div class="prompt-header">
+                        <div class="prompt-label">
+                            <i class="fa-solid fa-language"></i> 中文结构化解析
+                        </div>
+                        <button onclick="copyToClipboard('chinesePrompt')" class="copy-btn">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="prompt-content" id="chinesePrompt"></div>
+                </div>
+
+                <!-- English Prompt -->
+                <div class="prompt-group">
+                    <div class="prompt-header">
+                        <div class="prompt-label">
+                            <i class="fa-solid fa-terminal"></i> 英文提示词 (SD/MJ)
+                        </div>
+                        <button onclick="copyToClipboard('englishPrompt')" class="copy-btn">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="prompt-content" id="englishPrompt"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let imageDataList = []; // Store { file, aspects, previewUrl }
+
+        const aspects = [
+            {id: "风格", icon: "fa-palette"},
+            {id: "背景", icon: "fa-image"},
+            {id: "构图", icon: "fa-crop-simple"},
+            {id: "人物外貌", icon: "fa-user"},
+            {id: "人物动作", icon: "fa-running"},
+            {id: "穿搭", icon: "fa-shirt"},
+            {id: "主体物描述", icon: "fa-cube"},
+            {id: "光影描述", icon: "fa-lightbulb"},
+            {id: "画面配色", icon: "fa-swatchbook"},
+            {id: "摄像机角度", icon: "fa-video"}
+        ];
+
+        let currentModalFullPrompt = "";
+
+        function showModal(index) {
+            const prompt = document.getElementById(`prompt-data-${index}`)?.value;
+            const chineseEl = document.getElementById('modalChineseContent');
+            const englishEl = document.getElementById('modalEnglishContent');
+            const imgEl = document.getElementById('modalImage');
+
+            // Set Image
+            const item = imageDataList[index];
+            if (item) {
+                imgEl.src = item.previewUrl;
+            }
+
+            if (!prompt) {
+                chineseEl.textContent = "请先生成提示词...";
+                englishEl.textContent = "";
+                currentModalFullPrompt = "";
+            } else {
+                // Parse sections
+                let chineseText = "";
+                let englishText = "";
+                
+                if (prompt.includes("[Chinese Analysis]") && prompt.includes("[English Prompt]")) {
+                    const parts = prompt.split("[English Prompt]");
+                    chineseText = parts[0].replace("[Chinese Analysis]", "").trim();
+                    englishText = parts[1].trim();
+                } else {
+                    // Fallback for old format or errors
+                    chineseText = prompt;
+                    englishText = "Unable to parse structured English prompt.";
+                }
+
+                chineseEl.textContent = chineseText;
+                englishEl.textContent = englishText;
+                currentModalFullPrompt = prompt;
+            }
+            document.getElementById('promptModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').classList.add('hidden');
+        }
+
+        function copyModalSection(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector(`button[onclick="copyModalSection('${elementId}')"]`);
+                const originalText = btn.textContent;
+                btn.textContent = '已复制';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 1500);
+            });
+        }
+
+        function copyFullModalContent() {
+            if (!currentModalFullPrompt) return;
+            navigator.clipboard.writeText(currentModalFullPrompt).then(() => {
+                const btn = document.querySelector('.copy-btn-modal');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> 已复制';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('promptModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            // Determine default aspects to check (all by default with weight 1)
+            const defaultAspects = {};
+            // aspects.forEach(a => {
+            //     defaultAspects[a.id] = 1; // Default weight 1
+            // });
+
+            files.forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imageDataList.push({
+                        file: file,
+                        aspects: {...defaultAspects}, // Clone object
+                        previewUrl: e.target.result
+                    });
+                    renderImages();
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            event.target.value = '';
+        }
+
+        function removeImage(index) {
+            imageDataList.splice(index, 1);
+            // Clean up hidden inputs
+            const oldInput = document.getElementById(`prompt-data-${index}`);
+            if (oldInput) oldInput.remove();
+            // Re-index remaining inputs (simplified: just clear all and re-render will create new ones on next gen)
+            // Ideally we should shift indices, but re-rendering clears the UI. 
+            // Since generation depends on current list, we just need to ensure UI is consistent.
+            // The simplest way for this lightweight app is to clear previous generation data when list changes.
+            document.querySelectorAll('input[id^="prompt-data-"]').forEach(el => el.remove());
+            
+            renderImages();
+        }
+
+        function toggleAspect(index, aspectId, event) {
+            const item = imageDataList[index];
+            const currentWeight = item.aspects[aspectId] || 0;
+            
+            let newWeight = 0;
+            
+            if (event.shiftKey) {
+                // Shift + Click behavior
+                // If unselected (0) -> High (2)
+                // If Normal (1) -> High (2)
+                // If High (2) -> Normal (1) (Toggle high state)
+                if (currentWeight !== 2) newWeight = 2;
+                else newWeight = 1;
+            } else {
+                // Normal Click behavior
+                // If unselected (0) -> Normal (1)
+                // If Normal (1) -> Off (0)
+                // If High (2) -> Off (0)
+                if (currentWeight === 0) newWeight = 1;
+                else newWeight = 0;
+            }
+            
+            if (newWeight === 0) {
+                delete item.aspects[aspectId];
+            } else {
+                item.aspects[aspectId] = newWeight;
+            }
+            
+            renderImages(); // Re-render to update UI states
+        }
+
+        function renderImages() {
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = '';
+            
+            // Add static upload card as first item
+            const uploadCard = document.createElement('div');
+            uploadCard.className = "upload-card-small";
+            uploadCard.onclick = function() { document.getElementById('imageInput').click(); };
+            uploadCard.innerHTML = `
+                <i class="fa-solid fa-plus" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <span style="font-weight: 600; font-size: 0.9rem;">添加图片</span>
+                <span style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.7;">支持多张批量分析</span>
+            `;
+            container.appendChild(uploadCard);
+            
+            imageDataList.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = "image-card";
+                
+                // Generate checkbox HTML
+                const checkboxesHtml = aspects.map(aspect => {
+                    const weight = item.aspects[aspect.id] || 0;
+                    // We use data-weight attribute on the input to style the adjacent label
+                    return `
+                        <input type="checkbox" id="cb-${index}-${aspect.id}" 
+                               value="${aspect.id}" 
+                               class="tag-checkbox" 
+                               ${weight > 0 ? 'checked' : ''}
+                               data-weight="${weight}"
+                               onclick="event.preventDefault(); toggleAspect(${index}, '${aspect.id}', event);">
+                        <label for="cb-${index}-${aspect.id}" class="tag-label">
+                            <i class="fa-solid ${aspect.icon}" style="margin-right:6px; font-size:0.7rem;"></i>
+                            ${aspect.id}
+                            ${weight === 2 ? '<span class="weight-badge"><i class="fa-solid fa-star"></i></span>' : ''}
+                        </label>
+                    `;
+                }).join('');
+
+                div.innerHTML = `
+                    <div class="img-wrapper">
+                        <img src="${item.previewUrl}" class="image-preview" alt="${item.file.name}" onclick="showModal(${index})">
+                        <button onclick="removeImage(${index})" class="delete-btn" title="删除">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="file-name" title="${item.file.name}">
+                            <i class="fa-regular fa-file-image"></i> ${item.file.name}
+                        </div>
+                        <span class="aspect-label">
+                            选择参考维度 
+                        </span>
+                        <div class="tags-container">
+                            ${checkboxesHtml}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Initialize layout with upload card
+        window.onload = function() {
+            renderImages();
+        };
+
+        const precisionLabels = {
+            1: "简洁",
+            2: "标准",
+            3: "超精细"
+        };
+
+        document.getElementById('precisionRange').addEventListener('input', function(e) {
+            document.getElementById('precisionValue').textContent = precisionLabels[e.target.value];
+        });
+
+        async function generatePrompts() {
+            if (imageDataList.length === 0) {
+                alert("请先上传至少一张图片！");
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="generatePrompts()"]');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('loadingSpinner');
+            const errorMsg = document.getElementById('errorMessage');
+            const resultsSection = document.getElementById('resultsSection');
+
+            btn.disabled = true;
+            btnText.textContent = "正在生成...";
+            spinner.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+
+            const formData = new FormData();
+            const optionsMap = {};
+            const precisionLevel = document.getElementById('precisionRange').value;
+
+            // Build optionsMap from imageDataList
+            imageDataList.forEach((item, index) => {
+                // Now we need to pass both aspect name AND weight
+                // Let's pass a list of objects: [{id: "style", weight: 1}, ...]
+                const weightedAspects = [];
+                for (const [key, value] of Object.entries(item.aspects)) {
+                    weightedAspects.push({id: key, weight: value});
+                }
+                optionsMap[index] = weightedAspects;
+                formData.append('images', item.file);
+            });
+
+            formData.append('options', JSON.stringify(optionsMap));
+            formData.append('precision', precisionLevel);
+
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "生成失败");
+                }
+
+                // Parse the final prompt
+                const fullText = data.final_prompt;
+                let chineseText = "";
+                let englishText = "";
+
+                if (fullText.includes("[Chinese]") && fullText.includes("[English]")) {
+                    const parts = fullText.split("[English]");
+                    chineseText = parts[0].replace("[Chinese]", "").trim();
+                    englishText = parts[1].trim();
+                } else {
+                    chineseText = fullText;
+                    englishText = "Could not parse English section separately.";
+                }
+
+                document.getElementById('chinesePrompt').textContent = chineseText;
+                document.getElementById('englishPrompt').textContent = englishText;
+                
+                // Update Individual Prompts in Hover Cards/Modal Data
+                data.individual_prompts.forEach((prompt, i) => {
+                    // Create or update hidden input for modal data
+                    let dataInput = document.getElementById(`prompt-data-${i}`);
+                    if (!dataInput) {
+                        dataInput = document.createElement('input');
+                        dataInput.type = 'hidden';
+                        dataInput.id = `prompt-data-${i}`;
+                        document.body.appendChild(dataInput);
+                    }
+                    dataInput.value = prompt;
+                });
+
+                resultsSection.classList.remove('hidden');
+                
+                // Scroll to results
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                errorMsg.textContent = "生成出错: " + err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = "生成提示词";
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show a small toast or change button text briefly
+                const btn = document.querySelector(`button[onclick="copyToClipboard('${elementId}')"]`);
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            });
+        }
+
+        function copyIndividualPrompt(index) {
+            const hoverCard = document.getElementById(`analysis-${index}`);
+            const text = hoverCard.querySelector('.analysis-content').textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = hoverCard.querySelector('.hover-copy-btn');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> 已复制';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            });
+        }
+    </script>
+    <script>
+        // Force light mode via JS immediately
+        document.documentElement.style.backgroundColor = "#F7F6F3";
+        document.body.style.backgroundColor = "#F7F6F3";
+        document.body.style.color = "#37352F";
+    </script>
+</body>
+</html>

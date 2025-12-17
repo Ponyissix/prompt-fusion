@@ -1,0 +1,5 @@
+flask
+volcengine-python-sdk[ark]
+python-dotenv
+Pillow
+gunicorn
