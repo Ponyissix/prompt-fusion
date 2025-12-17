@@ -94,7 +94,8 @@
             align-items: center;
             justify-content: center;
             /* height: 420px; Removed strict height */
-            min-height: 420px; /* Use min-height instead */
+            min-height: 480px; /* Increased to match average populated card height */
+            height: 100%; /* Force fill grid cell */
             width: 100%;   /* Fill grid cell */
             cursor: pointer;
             transition: all 0.2s ease;
@@ -114,7 +115,14 @@
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
             margin-bottom: 3rem;
-            align-items: stretch; /* Ensure all items in a row stretch to the same height */
+            /* align-items: stretch;  Removed stretch to avoid forcing height */
+            grid-auto-rows: 1fr; /* Make all rows same height */
+        }
+
+        /* Initial empty state height for grid items */
+        .content-grid:empty + #imageInput {
+             /* This selector won't work directly because imageInput is after grid. 
+                Instead, we rely on min-height in card classes. */
         }
 
         /* Image Card - Retro Polaroid/Card Style */
@@ -126,7 +134,8 @@
             box-shadow: var(--shadow-sm);
             transition: box-shadow 0.2s;
             /* height: 420px; Removed strict height */
-            min-height: 420px; /* Use min-height instead */
+            min-height: 480px; /* Matched with upload card */
+            height: 100%; /* Force fill grid cell */
             display: flex;
             flex-direction: column;
             box-sizing: border-box; /* Ensure border is included in height */
@@ -523,6 +532,12 @@
             background: transparent;
             border: none;
             padding: 0;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .prompt-content:hover {
+            opacity: 0.7;
         }
 
         /* Individual Results */
@@ -799,7 +814,7 @@
 
     <div class="main-container">
         <!-- Image Grid (including Add Card) -->
-        <div id="imageContainer" class="content-grid">
+        <div id="imageContainer" class="content-grid" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
             <!-- Static Upload Card will be injected via JS -->
         </div>
         
@@ -881,11 +896,11 @@
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
-                    <div class="prompt-content" id="chinesePrompt"></div>
+                    <div class="prompt-content" id="chinesePrompt" onclick="copyToClipboard('chinesePrompt')" title="点击复制"></div>
                 </div>
 
-                <!-- English Prompt -->
-                <div class="prompt-group">
+                <!-- English Prompt (Initially Hidden) -->
+                <div class="prompt-group hidden" id="englishGroup">
                     <div class="prompt-header">
                         <div class="prompt-label">
                             <i class="fa-solid fa-terminal"></i> 英文提示词 (SD/MJ)
@@ -894,7 +909,14 @@
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
-                    <div class="prompt-content" id="englishPrompt"></div>
+                    <div class="prompt-content" id="englishPrompt" onclick="copyToClipboard('englishPrompt')" title="点击复制"></div>
+                </div>
+
+                <!-- Translate Button -->
+                <div class="prompt-group" id="translateGroup" style="text-align: center; margin-top: -1rem;">
+                    <button onclick="translatePrompt()" class="btn-generate" style="margin: 0 auto; background: white; color: var(--text-main); border: 1px solid var(--border);">
+                        <i class="fa-solid fa-language"></i> 翻译为英文
+                    </button>
                 </div>
             </div>
         </div>
@@ -913,7 +935,8 @@
             {id: "主体物描述", icon: "fa-cube"},
             {id: "光影描述", icon: "fa-lightbulb"},
             {id: "画面配色", icon: "fa-swatchbook"},
-            {id: "摄像机角度", icon: "fa-video"}
+            {id: "摄像机角度", icon: "fa-video"},
+            {id: "文字/水印", icon: "fa-font"}
         ];
 
         let currentModalFullPrompt = "";
@@ -964,11 +987,15 @@
             const text = document.getElementById(elementId).textContent;
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.querySelector(`button[onclick="copyModalSection('${elementId}')"]`);
-                const originalText = btn.textContent;
+                // Clear any existing timer
+                if (btn.dataset.timer) clearTimeout(btn.dataset.timer);
+                
                 btn.textContent = '已复制';
-                setTimeout(() => {
-                    btn.textContent = originalText;
+                
+                const timer = setTimeout(() => {
+                    btn.textContent = '复制';
                 }, 1500);
+                btn.dataset.timer = timer;
             });
         }
 
@@ -976,11 +1003,14 @@
             if (!currentModalFullPrompt) return;
             navigator.clipboard.writeText(currentModalFullPrompt).then(() => {
                 const btn = document.querySelector('.copy-btn-modal');
-                const originalHtml = btn.innerHTML;
+                if (btn.dataset.timer) clearTimeout(btn.dataset.timer);
+                
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> 已复制';
-                setTimeout(() => {
-                    btn.innerHTML = originalHtml;
+                
+                const timer = setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-regular fa-copy"></i> 复制全部';
                 }, 2000);
+                btn.dataset.timer = timer;
             });
         }
 
@@ -992,29 +1022,67 @@
             }
         }
 
-        function handleFileSelect(event) {
-            const files = Array.from(event.target.files);
-            if (files.length === 0) return;
+        // --- Drag and Drop Logic ---
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy';
+            
+            // Optional: Add visual feedback
+            const container = document.getElementById('imageContainer');
+            container.style.border = '2px dashed #E16259';
+            container.style.backgroundColor = 'rgba(225, 98, 89, 0.05)';
+        }
 
-            // Determine default aspects to check (all by default with weight 1)
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const container = document.getElementById('imageContainer');
+            container.style.border = 'none';
+            container.style.backgroundColor = 'transparent';
+        }
+
+        // Add dragleave listener to container since it's not inline
+        document.getElementById('imageContainer').addEventListener('dragleave', handleDragLeave);
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Remove visual feedback
+            const container = document.getElementById('imageContainer');
+            container.style.border = 'none';
+            container.style.backgroundColor = 'transparent';
+
+            const files = Array.from(event.dataTransfer.files);
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) return;
+
+            processFiles(imageFiles);
+        }
+
+        function processFiles(files) {
             const defaultAspects = {};
-            // aspects.forEach(a => {
-            //     defaultAspects[a.id] = 1; // Default weight 1
-            // });
-
+            
             files.forEach((file) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     imageDataList.push({
                         file: file,
-                        aspects: {...defaultAspects}, // Clone object
+                        aspects: {...defaultAspects}, 
                         previewUrl: e.target.result
                     });
                     renderImages();
                 };
                 reader.readAsDataURL(file);
             });
-            
+        }
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+            processFiles(files);
             event.target.value = '';
         }
 
@@ -1148,12 +1216,16 @@
             const spinner = document.getElementById('loadingSpinner');
             const errorMsg = document.getElementById('errorMessage');
             const resultsSection = document.getElementById('resultsSection');
+            const englishGroup = document.getElementById('englishGroup');
+            const translateGroup = document.getElementById('translateGroup');
 
             btn.disabled = true;
             btnText.textContent = "正在生成...";
             spinner.classList.remove('hidden');
             errorMsg.classList.add('hidden');
             resultsSection.classList.add('hidden');
+            englishGroup.classList.add('hidden'); // Reset: Hide English
+            translateGroup.classList.remove('hidden'); // Reset: Show Translate Btn
 
             const formData = new FormData();
             const optionsMap = {};
@@ -1161,8 +1233,6 @@
 
             // Build optionsMap from imageDataList
             imageDataList.forEach((item, index) => {
-                // Now we need to pass both aspect name AND weight
-                // Let's pass a list of objects: [{id: "style", weight: 1}, ...]
                 const weightedAspects = [];
                 for (const [key, value] of Object.entries(item.aspects)) {
                     weightedAspects.push({id: key, weight: value});
@@ -1187,26 +1257,12 @@
                     throw new Error(data.error || "生成失败");
                 }
 
-                // Parse the final prompt
-                const fullText = data.final_prompt;
-                let chineseText = "";
-                let englishText = "";
-
-                if (fullText.includes("[Chinese]") && fullText.includes("[English]")) {
-                    const parts = fullText.split("[English]");
-                    chineseText = parts[0].replace("[Chinese]", "").trim();
-                    englishText = parts[1].trim();
-                } else {
-                    chineseText = fullText;
-                    englishText = "Could not parse English section separately.";
-                }
-
-                document.getElementById('chinesePrompt').textContent = chineseText;
-                document.getElementById('englishPrompt').textContent = englishText;
+                // Just display Chinese prompt directly
+                document.getElementById('chinesePrompt').textContent = data.final_prompt;
+                document.getElementById('englishPrompt').textContent = ""; // Clear previous
                 
-                // Update Individual Prompts in Hover Cards/Modal Data
+                // Update Individual Prompts
                 data.individual_prompts.forEach((prompt, i) => {
-                    // Create or update hidden input for modal data
                     let dataInput = document.getElementById(`prompt-data-${i}`);
                     if (!dataInput) {
                         dataInput = document.createElement('input');
@@ -1232,16 +1288,67 @@
             }
         }
 
+        async function translatePrompt() {
+            const chineseText = document.getElementById('chinesePrompt').textContent;
+            if (!chineseText) return;
+
+            const btn = document.querySelector('button[onclick="translatePrompt()"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader" style="border-color: #333; border-top-color: transparent; width: 14px; height: 14px;"></div> 正在翻译...';
+
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: chineseText })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || "翻译失败");
+                }
+
+                document.getElementById('englishPrompt').textContent = data.translated_text;
+                document.getElementById('englishGroup').classList.remove('hidden');
+                document.getElementById('translateGroup').classList.add('hidden'); // Hide button after success
+
+            } catch (err) {
+                alert("翻译出错: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         function copyToClipboard(elementId) {
             const text = document.getElementById(elementId).textContent;
+            if (!text) return;
+            
             navigator.clipboard.writeText(text).then(() => {
-                // Show a small toast or change button text briefly
-                const btn = document.querySelector(`button[onclick="copyToClipboard('${elementId}')"]`);
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                setTimeout(() => {
-                    btn.innerHTML = originalHtml;
-                }, 2000);
+                // Find the button associated with this elementId
+                // We use partial matching to handle single/double quotes differences
+                const btn = document.querySelector(`button[onclick*="'${elementId}'"]`) || 
+                            document.querySelector(`button[onclick*='"${elementId}"']`);
+                
+                if (btn) {
+                    // Clear existing timer if any to prevent race conditions
+                    if (btn.dataset.timer) clearTimeout(btn.dataset.timer);
+                    
+                    // Show checkmark
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    
+                    // Restore to copy icon after delay
+                    const timer = setTimeout(() => {
+                        btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                        delete btn.dataset.timer;
+                    }, 2000);
+                    
+                    btn.dataset.timer = timer;
+                }
             });
         }
 
@@ -1270,24 +1377,36 @@
         };
 
         document.addEventListener('mousedown', function(e) {
-            const container = e.target.closest('.tags-container');
-            if (!container) return;
+            // Check if clicking inside card body (not just tags container)
+            const cardBody = e.target.closest('.card-body');
+            if (!cardBody) return;
             
-            // Don't start if clicking on a tag directly (let click handler work)
-            if (e.target.closest('.tag-label')) return;
+            // Find the tags container within this card
+            const container = cardBody.querySelector('.tags-container');
+            if (!container) return;
+
+            // Don't start if clicking on a tag directly or delete button
+            if (e.target.closest('.tag-label') || e.target.closest('.delete-btn')) return;
 
             // Start selection
             selectionState.isSelecting = true;
             selectionState.container = container;
             selectionState.cardIndex = parseInt(container.dataset.index);
 
+            // Use page coordinates for initial start point to handle scrolling better
+            // But we need relative to container for the box drawing
             const rect = container.getBoundingClientRect();
+            
+            // Allow starting selection from anywhere in the card body
+            // We project the start point relative to the tags container
             selectionState.startX = e.clientX - rect.left;
             selectionState.startY = e.clientY - rect.top;
 
             // Create box
             const box = document.createElement('div');
             box.className = 'selection-box';
+            // Initial position might be "outside" visual container if clicked in padding, 
+            // but CSS overflow:visible handles it.
             box.style.left = selectionState.startX + 'px';
             box.style.top = selectionState.startY + 'px';
             box.style.width = '0px';
