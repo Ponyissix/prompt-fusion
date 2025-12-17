@@ -3,3 +3,4 @@ volcengine-python-sdk[ark]
 python-dotenv
 Pillow
 gunicorn
+volcengine-ark-runtime
