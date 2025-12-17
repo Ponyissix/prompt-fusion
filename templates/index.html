@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Removed color-scheme meta to prevent potential conflicts, handling via CSS -->
-    <title>提示词小偷</title>
+    <title>提示词融合</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -188,13 +188,7 @@
         }
 
         .file-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.75rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-family: 'Space Mono', monospace;
+            display: none !important;
         }
 
         .aspect-label {
@@ -215,6 +209,16 @@
             align-content: flex-start; /* Ensure tags pack nicely at top */
             flex: 1; /* Allow container to take space */
             overflow: visible; /* Show all tags */
+            position: relative; /* For selection box positioning */
+            user-select: none; /* Prevent text selection during drag */
+        }
+
+        .selection-box {
+            position: absolute;
+            background: rgba(225, 98, 89, 0.2);
+            border: 1px solid #E16259;
+            pointer-events: none;
+            z-index: 100;
         }
 
         .tag-checkbox {
@@ -246,19 +250,19 @@
             background: rgba(227, 226, 224, 0.8);
         }
 
-        /* State 1: Standard Selection (Weight 1) - Light Red */
+        /* State 1: Standard Selection (Weight 1) - Darker Red/Primary */
         .tag-checkbox[data-weight="1"] + .tag-label {
-            background: #FFE2DD;
-            color: #D44C47;
+            background: #E16259; /* Was #FFE2DD */
+            color: white; /* Was #D44C47 */
             font-weight: 600;
         }
 
-        /* State 2: High Priority (Weight 2) - Dark Red */
+        /* State 2: High Priority (Weight 2) - Even Darker/Black for contrast */
         .tag-checkbox[data-weight="2"] + .tag-label {
-            background: #D44C47;
+            background: #2C2C2C; /* Was #D44C47 */
             color: white;
             font-weight: 600;
-            box-shadow: 0 2px 4px rgba(212, 76, 71, 0.3);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .tag-checkbox[data-weight="2"] + .tag-label i {
@@ -772,51 +776,24 @@
 <body style="background-color: #F7F6F3; color: #37352F;">
     <nav class="navbar" style="background-color: #FFFFFF;">
         <div class="nav-content">
-            <!-- Custom Rubber Hose / Retro Cartoon Style Thief Icon (Vintage Disney Style) -->
+            <!-- Logo Icon: Fusion Spark (Modern & Minimalist) -->
             <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Cap (Newsboy style) -->
-                <path d="M15 35 C10 35, 5 30, 10 20 C15 10, 85 10, 90 20 C95 30, 90 35, 85 35 Z" fill="black"/>
-                <path d="M10 35 C10 35, 50 48, 90 35" fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/> <!-- Cap Brim -->
+                <!-- Main Spark shape (Rounded Star) -->
+                <path d="M50 15 
+                         Q 60 40 85 50 
+                         Q 60 60 50 85 
+                         Q 40 60 15 50 
+                         Q 40 40 50 15 Z" 
+                         fill="white" stroke="#2C2C2C" stroke-width="6" stroke-linejoin="round"/>
                 
-                <!-- Face Shape (Round) -->
-                <path d="M20 40 C15 55, 15 85, 50 85 C85 85, 85 55, 80 40" fill="white" stroke="black" stroke-width="3"/>
+                <!-- Fusion Core (Red Dot) -->
+                <circle cx="50" cy="50" r="12" fill="#E16259"/>
                 
-                <!-- Ears (Round Mouse-ish ears) -->
-                <circle cx="15" cy="55" r="12" fill="white" stroke="black" stroke-width="3"/>
-                <circle cx="85" cy="55" r="12" fill="white" stroke="black" stroke-width="3"/>
-                <circle cx="15" cy="55" r="7" fill="none" stroke="black" stroke-width="1"/> <!-- Inner ear -->
-                <circle cx="85" cy="55" r="7" fill="none" stroke="black" stroke-width="1"/> <!-- Inner ear -->
-
-                <!-- Mask (Bandit Mask) -->
-                <path d="M19 50 C30 42, 70 42, 81 50 C85 58, 85 68, 81 72 C70 65, 30 65, 19 72 C15 68, 15 58, 19 50 Z" fill="black"/>
-                
-                <!-- Eyes (Pie Eyes - White shapes on black mask with black wedges) -->
-                <!-- Left Eye -->
-                <ellipse cx="35" cy="58" rx="8" ry="10" fill="white"/>
-                <path d="M35 58 L 40 63 L 42 55 Z" fill="black"/> <!-- Pie cut -->
-                
-                <!-- Right Eye -->
-                <ellipse cx="65" cy="58" rx="8" ry="10" fill="white"/>
-                <path d="M65 58 L 60 63 L 58 55 Z" fill="black"/> <!-- Pie cut -->
-
-                <!-- Nose -->
-                <ellipse cx="50" cy="76" rx="6" ry="4" fill="black"/>
-                
-                <!-- Mouth (Big Smile) -->
-                <path d="M35 82 Q 50 92 65 82" fill="none" stroke="black" stroke-width="3" stroke-linecap="round"/>
-                <path d="M33 80 L 35 82 M 67 80 L 65 82" fill="none" stroke="black" stroke-width="3" stroke-linecap="round"/> <!-- Cheek marks -->
-
-                <!-- Hand holding Money Bag -->
-                <g transform="translate(75, 75) rotate(-10)">
-                    <!-- Bag -->
-                    <path d="M0 0 C -10 10, 20 25, 10 10" fill="white" stroke="black" stroke-width="3"/>
-                    <text x="0" y="12" font-family="sans-serif" font-weight="bold" font-size="12" fill="black">$</text>
-                    <!-- Glove Hand -->
-                    <circle cx="5" cy="-5" r="8" fill="white" stroke="black" stroke-width="2"/>
-                    <path d="M0 -5 L 10 -5" stroke="black" stroke-width="1"/>
-                </g>
+                <!-- Orbiting particles (Fusion concept) -->
+                <circle cx="20" cy="20" r="6" fill="#2C2C2C"/>
+                <circle cx="80" cy="80" r="6" fill="#2C2C2C"/>
             </svg>
-            <h1 class="nav-title">提示词小偷</h1>
+            <h1 class="nav-title">提示词融合</h1>
         </div>
     </nav>
 
@@ -867,7 +844,7 @@
         <!-- Controls Section -->
         <div class="controls-section">
             <div class="controls-hint">
-                <i class="fa-solid fa-circle-info"></i> 点击标签选中 / Shift+点击提高标签权重
+                <i class="fa-solid fa-circle-info"></i> 点击/框选选中标签 · Shift+点击提高权重
             </div>
             <div class="control-group">
                 <div class="label-group">
@@ -1062,17 +1039,15 @@
             let newWeight = 0;
             
             if (event.shiftKey) {
-                // Shift + Click behavior
-                // If unselected (0) -> High (2)
-                // If Normal (1) -> High (2)
-                // If High (2) -> Normal (1) (Toggle high state)
-                if (currentWeight !== 2) newWeight = 2;
-                else newWeight = 1;
+                // Shift + Click behavior -> Toggle High Priority
+                // If High (2) -> Normal (1)
+                // If Normal (1) or Off (0) -> High (2)
+                if (currentWeight === 2) newWeight = 1;
+                else newWeight = 2;
             } else {
-                // Normal Click behavior
-                // If unselected (0) -> Normal (1)
-                // If Normal (1) -> Off (0)
-                // If High (2) -> Off (0)
+                // Normal Click behavior -> Toggle Selection
+                // If Off (0) -> Normal (1)
+                // If Normal (1) or High (2) -> Off (0)
                 if (currentWeight === 0) newWeight = 1;
                 else newWeight = 0;
             }
@@ -1138,9 +1113,9 @@
                         <span class="aspect-label">
                             选择参考维度 
                         </span>
-                        <div class="tags-container">
-                            ${checkboxesHtml}
-                        </div>
+                        <div class="tags-container" data-index="${index}">
+                    ${checkboxesHtml}
+                </div>
                     </div>
                 `;
                 container.appendChild(div);
@@ -1283,6 +1258,112 @@
                 }, 2000);
             });
         }
+
+        // --- Box Selection Logic ---
+        let selectionState = {
+            isSelecting: false,
+            startX: 0,
+            startY: 0,
+            container: null,
+            cardIndex: -1,
+            selectionBox: null
+        };
+
+        document.addEventListener('mousedown', function(e) {
+            const container = e.target.closest('.tags-container');
+            if (!container) return;
+            
+            // Don't start if clicking on a tag directly (let click handler work)
+            if (e.target.closest('.tag-label')) return;
+
+            // Start selection
+            selectionState.isSelecting = true;
+            selectionState.container = container;
+            selectionState.cardIndex = parseInt(container.dataset.index);
+
+            const rect = container.getBoundingClientRect();
+            selectionState.startX = e.clientX - rect.left;
+            selectionState.startY = e.clientY - rect.top;
+
+            // Create box
+            const box = document.createElement('div');
+            box.className = 'selection-box';
+            box.style.left = selectionState.startX + 'px';
+            box.style.top = selectionState.startY + 'px';
+            box.style.width = '0px';
+            box.style.height = '0px';
+            container.appendChild(box);
+            selectionState.selectionBox = box;
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!selectionState.isSelecting) return;
+            
+            const container = selectionState.container;
+            const rect = container.getBoundingClientRect();
+            
+            // Calculate relative coordinates
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            const width = Math.abs(currentX - selectionState.startX);
+            const height = Math.abs(currentY - selectionState.startY);
+            const left = Math.min(currentX, selectionState.startX);
+            const top = Math.min(currentY, selectionState.startY);
+            
+            const box = selectionState.selectionBox;
+            box.style.width = width + 'px';
+            box.style.height = height + 'px';
+            box.style.left = left + 'px';
+            box.style.top = top + 'px';
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            if (!selectionState.isSelecting) return;
+            
+            const box = selectionState.selectionBox;
+            const container = selectionState.container;
+            const boxRect = box.getBoundingClientRect();
+            const item = imageDataList[selectionState.cardIndex];
+            
+            // Find intersecting tags
+            const labels = container.querySelectorAll('.tag-label');
+            let changed = false;
+
+            labels.forEach(label => {
+                const labelRect = label.getBoundingClientRect();
+                const checkboxId = label.getAttribute('for');
+                const checkbox = document.getElementById(checkboxId);
+                const aspectId = checkbox.value;
+
+                // Simple collision detection
+                if (!(boxRect.right < labelRect.left || 
+                      boxRect.left > labelRect.right || 
+                      boxRect.bottom < labelRect.top || 
+                      boxRect.top > labelRect.bottom)) {
+                    
+                    // Toggle Logic:
+                    // If selected (weight > 0) -> Unselected (0)
+                    // If unselected (weight 0) -> Selected (1)
+                    if (item.aspects[aspectId]) {
+                        delete item.aspects[aspectId];
+                    } else {
+                        item.aspects[aspectId] = 1;
+                    }
+                    changed = true;
+                }
+            });
+
+            // Cleanup
+            if (box) box.remove();
+            selectionState.isSelecting = false;
+            selectionState.container = null;
+            selectionState.selectionBox = null;
+            
+            if (changed) {
+                renderImages();
+            }
+        });
     </script>
     <script>
         // Force light mode via JS immediately
