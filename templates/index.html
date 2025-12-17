@@ -875,9 +875,22 @@
 
             <!-- Deep Thinking Toggle -->
             <div class="control-group" style="flex: 0 0 auto; margin-left: 1rem; border-left: 1px solid var(--border); padding-left: 1rem;">
-                <div class="label-group" style="gap: 0.5rem; cursor: pointer;" onclick="document.getElementById('thinkingCheck').click()">
-                    <input type="checkbox" id="thinkingCheck" checked style="accent-color: var(--text-main); width: 16px; height: 16px; cursor: pointer;">
+                <div class="label-group" style="gap: 0.5rem; cursor: pointer; user-select: none;" onclick="toggleThinking()">
+                    <div id="thinkingCheckbox" style="
+                        width: 16px; 
+                        height: 16px; 
+                        border: 2px solid var(--text-main); 
+                        border-radius: 3px; 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center;
+                        background: var(--text-main);
+                        transition: all 0.2s;
+                    ">
+                        <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
+                    </div>
                     <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考</span>
+                    <input type="checkbox" id="thinkingCheck" checked style="display: none;">
                 </div>
             </div>
 
@@ -1388,6 +1401,24 @@
         }
 
         // --- Box Selection Logic ---
+        function toggleThinking() {
+            const checkbox = document.getElementById('thinkingCheck');
+            const visualBox = document.getElementById('thinkingCheckbox');
+            const icon = visualBox.querySelector('i');
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                visualBox.style.background = 'var(--text-main)';
+                visualBox.style.borderColor = 'var(--text-main)';
+                icon.style.opacity = '1';
+            } else {
+                visualBox.style.background = 'transparent';
+                visualBox.style.borderColor = '#ccc';
+                icon.style.opacity = '0';
+            }
+        }
+
         let selectionState = {
             isSelecting: false,
             startX: 0,
