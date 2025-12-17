@@ -1732,7 +1732,11 @@
                 if (seconds > 5 && seconds <= 15) {
                     btnText.textContent = "正在上传图片...";
                 } else if (seconds > 15 && seconds <= 40) {
-                    btnText.textContent = "正在深度思考中...";
+                    if (enableThinking) {
+                        btnText.textContent = "正在深度思考中...";
+                    } else {
+                        btnText.textContent = "正在分析画面...";
+                    }
                 } else if (seconds > 40) {
                     btnText.textContent = "正在融合生成...";
                 }
