@@ -180,6 +180,17 @@
             opacity: 0.9;
         }
 
+        /* Selected Tag Style in Pool */
+        .draggable-tag.selected {
+            background: #2C2C2C;
+            color: white;
+            border-color: #2C2C2C;
+        }
+        
+        .draggable-tag.selected i {
+            color: rgba(255,255,255,0.8);
+        }
+
         /* Upload Card Small - Grid Item */
         .upload-card-small {
             background: transparent;
@@ -1041,6 +1052,7 @@
 
     <script>
         let imageDataList = []; // Store { file, aspects, previewUrl }
+        let selectedPoolTags = new Set(); // Store selected tag IDs in the pool
 
         const aspects = [
             {id: "风格", icon: "fa-palette"},
@@ -1208,6 +1220,15 @@
 
         // --- Tag Logic ---
 
+        function togglePoolTagSelection(tagId) {
+            if (selectedPoolTags.has(tagId)) {
+                selectedPoolTags.delete(tagId);
+            } else {
+                selectedPoolTags.add(tagId);
+            }
+            renderTagBar(); // Re-render to update styles
+        }
+
         function removeTag(index, aspectId, event) {
             event.stopPropagation(); // Prevent drag start or other events
             const item = imageDataList[index];
@@ -1221,13 +1242,27 @@
             // Set allowed effects
             event.dataTransfer.effectAllowed = 'copyMove';
             
-            // Set drag data
-            const dragData = JSON.stringify({
-                tagId: tagId,
-                sourceIndex: sourceIndex // -1 means from Tag Pool, >=0 means from Image Card
-            });
-            event.dataTransfer.setData('application/json', dragData);
-            event.dataTransfer.setData('text/plain', dragData); // Fallback
+            let dragPayload = { items: [] };
+
+            // Logic for Batch Dragging from Pool
+            if (sourceIndex === -1) {
+                if (selectedPoolTags.has(tagId)) {
+                    // If dragging a selected tag, drag ALL selected tags
+                    selectedPoolTags.forEach(id => {
+                        dragPayload.items.push({ tagId: id, sourceIndex: -1 });
+                    });
+                } else {
+                    // If dragging an unselected tag, drag only this one (ignore selection)
+                    dragPayload.items.push({ tagId: tagId, sourceIndex: -1 });
+                }
+            } else {
+                // Dragging from Image Card (Single tag)
+                dragPayload.items.push({ tagId: tagId, sourceIndex: sourceIndex });
+            }
+            
+            const dragDataStr = JSON.stringify(dragPayload);
+            event.dataTransfer.setData('application/json', dragDataStr);
+            event.dataTransfer.setData('text/plain', dragDataStr); // Fallback
             
             // Visual feedback
             setTimeout(() => {
@@ -1256,39 +1291,54 @@
             try {
                 const data = JSON.parse(dataStr);
                 
-                // Validate if it's our tag data
-                if (!data.tagId) return;
+                // Normalize to array of items
+                let items = [];
+                if (data.items && Array.isArray(data.items)) {
+                    items = data.items;
+                } else if (data.tagId) {
+                    // Backward compatibility / Single item fallback
+                    items = [{ tagId: data.tagId, sourceIndex: data.sourceIndex }];
+                } else {
+                    return; // Invalid data
+                }
 
-                const tagId = data.tagId;
-                const sourceIndex = parseInt(data.sourceIndex);
                 const targetIdx = parseInt(targetIndex);
+                let hasChanges = false;
 
-                console.log(`Dropping tag ${tagId} from ${sourceIndex} to ${targetIdx}`);
+                items.forEach(item => {
+                    const tagId = item.tagId;
+                    const sourceIndex = parseInt(item.sourceIndex);
 
-                // Case 1: Dropped onto same location -> Do nothing
-                if (sourceIndex === targetIdx) return;
+                    // Case 1: Dropped onto same location -> Do nothing
+                    if (sourceIndex === targetIdx) return;
 
-                // Case 2: From Pool (-1) to Card (>=0)
-                if (sourceIndex === -1 && targetIdx >= 0) {
-                    imageDataList[targetIdx].aspects[tagId] = 1;
-                }
-                
-                // Case 3: From Card (>=0) to Pool (-1)
-                else if (sourceIndex >= 0 && targetIdx === -1) {
-                    delete imageDataList[sourceIndex].aspects[tagId];
-                }
-
-                // Case 4: From Card A to Card B
-                else if (sourceIndex >= 0 && targetIdx >= 0) {
-                    // Remove from Source
-                    const weight = imageDataList[sourceIndex].aspects[tagId];
-                    delete imageDataList[sourceIndex].aspects[tagId];
+                    // Case 2: From Pool (-1) to Card (>=0)
+                    if (sourceIndex === -1 && targetIdx >= 0) {
+                        imageDataList[targetIdx].aspects[tagId] = 1;
+                        hasChanges = true;
+                    }
                     
-                    // Add to Target
-                    imageDataList[targetIdx].aspects[tagId] = weight;
-                }
+                    // Case 3: From Card (>=0) to Pool (-1)
+                    else if (sourceIndex >= 0 && targetIdx === -1) {
+                        delete imageDataList[sourceIndex].aspects[tagId];
+                        hasChanges = true;
+                    }
 
-                renderUI();
+                    // Case 4: From Card A to Card B
+                    else if (sourceIndex >= 0 && targetIdx >= 0) {
+                        // Remove from Source
+                        const weight = imageDataList[sourceIndex].aspects[tagId];
+                        delete imageDataList[sourceIndex].aspects[tagId];
+                        
+                        // Add to Target
+                        imageDataList[targetIdx].aspects[tagId] = weight;
+                        hasChanges = true;
+                    }
+                });
+
+                if (hasChanges) {
+                    renderUI();
+                }
 
             } catch (e) {
                 console.error("Invalid drag data", e);
@@ -1318,13 +1368,30 @@
                 return;
             }
 
+            // Clean up selected tags that are now assigned
+            // If a tag is assigned to ANY image, it disappears from pool, so we should remove it from selection set
+            const allAssignedTags = new Set();
+            imageDataList.forEach(item => {
+                Object.keys(item.aspects).forEach(key => allAssignedTags.add(key));
+            });
+            // Remove assigned tags from selection
+            for (let tagId of selectedPoolTags) {
+                if (allAssignedTags.has(tagId)) {
+                    selectedPoolTags.delete(tagId);
+                }
+            }
+
             availableAspects.forEach(aspect => {
                 const tag = document.createElement('div');
                 tag.className = 'draggable-tag';
+                if (selectedPoolTags.has(aspect.id)) {
+                    tag.classList.add('selected');
+                }
                 tag.draggable = true;
                 tag.innerHTML = `<i class="fa-solid ${aspect.icon}"></i> ${aspect.id}`;
                 tag.ondragstart = (e) => handleTagDragStart(e, aspect.id, -1);
                 tag.ondragend = handleTagDragEnd;
+                tag.onclick = () => togglePoolTagSelection(aspect.id);
                 container.appendChild(tag);
             });
         }
