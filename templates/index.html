@@ -166,6 +166,16 @@
             color: white;
             border-color: transparent;
         }
+
+        /* Selected Tag Styles (Batch Selection) */
+        .draggable-tag.selected {
+            background: #2C2C2C;
+            color: white;
+            border-color: #2C2C2C;
+        }
+        .draggable-tag.selected i {
+            color: rgba(255, 255, 255, 0.8);
+        }
         
         .draggable-tag.assigned i {
             color: rgba(255,255,255,0.8);
@@ -178,17 +188,6 @@
 
         .draggable-tag.assigned:hover {
             opacity: 0.9;
-        }
-
-        /* Selected Tag Style in Pool */
-        .draggable-tag.selected {
-            background: #2C2C2C;
-            color: white;
-            border-color: #2C2C2C;
-        }
-        
-        .draggable-tag.selected i {
-            color: rgba(255,255,255,0.8);
         }
 
         /* Upload Card Small - Grid Item */
@@ -954,7 +953,7 @@
             <!-- New Top Row: Tag Pool -->
             <div class="controls-tags-area">
                 <div class="tags-header-small">
-                    <i class="fa-solid fa-tags"></i> 可用标签池 (拖拽至图片分配)
+                    <i class="fa-solid fa-tags"></i> 可用标签池 (按住Shift多选 · 拖拽分配)
                 </div>
                 <div id="tagPool" class="tag-pool-compact" 
                      ondrop="handleTagDrop(event, -1)" 
@@ -1052,7 +1051,7 @@
 
     <script>
         let imageDataList = []; // Store { file, aspects, previewUrl }
-        let selectedPoolTags = new Set(); // Store selected tag IDs in the pool
+        let selectedTags = new Set(); // Store selected tag IDs for batch operations
 
         const aspects = [
             {id: "风格", icon: "fa-palette"},
@@ -1220,13 +1219,27 @@
 
         // --- Tag Logic ---
 
-        function togglePoolTagSelection(tagId) {
-            if (selectedPoolTags.has(tagId)) {
-                selectedPoolTags.delete(tagId);
+        function handleTagClick(event, tagId) {
+            // Toggle selection with Shift key
+            if (event.shiftKey) {
+                if (selectedTags.has(tagId)) {
+                    selectedTags.delete(tagId);
+                    event.currentTarget.classList.remove('selected');
+                } else {
+                    selectedTags.add(tagId);
+                    event.currentTarget.classList.add('selected');
+                }
             } else {
-                selectedPoolTags.add(tagId);
+                // Without Shift, clear other selections and select only this one
+                // But only if we are not dragging? (Click fires on mouseup)
+                // We'll treat a normal click as "Reset selection to just this one"
+                selectedTags.clear();
+                selectedTags.add(tagId);
+                
+                // Update UI classes
+                document.querySelectorAll('.draggable-tag.selected').forEach(el => el.classList.remove('selected'));
+                event.currentTarget.classList.add('selected');
             }
-            renderTagBar(); // Re-render to update styles
         }
 
         function removeTag(index, aspectId, event) {
@@ -1242,36 +1255,54 @@
             // Set allowed effects
             event.dataTransfer.effectAllowed = 'copyMove';
             
-            let dragPayload = { items: [] };
+            let tagsToDrag = [];
 
-            // Logic for Batch Dragging from Pool
+            // Logic for Batch Dragging
+            // Only apply batch logic if dragging from Pool (-1)
             if (sourceIndex === -1) {
-                if (selectedPoolTags.has(tagId)) {
-                    // If dragging a selected tag, drag ALL selected tags
-                    selectedPoolTags.forEach(id => {
-                        dragPayload.items.push({ tagId: id, sourceIndex: -1 });
-                    });
+                // If the dragged tag is part of the current selection, drag ALL selected tags
+                if (selectedTags.has(tagId)) {
+                    tagsToDrag = Array.from(selectedTags);
                 } else {
-                    // If dragging an unselected tag, drag only this one (ignore selection)
-                    dragPayload.items.push({ tagId: tagId, sourceIndex: -1 });
+                    // If dragging a tag NOT in selection, we treat it as a single drag
+                    // And conceptually, it should probably clear the old selection
+                    selectedTags.clear();
+                    selectedTags.add(tagId);
+                    
+                    // Update UI visually (though drag image might not catch up instantly)
+                    document.querySelectorAll('.draggable-tag.selected').forEach(el => el.classList.remove('selected'));
+                    event.target.classList.add('selected');
+                    
+                    tagsToDrag = [tagId];
                 }
             } else {
-                // Dragging from Image Card (Single tag)
-                dragPayload.items.push({ tagId: tagId, sourceIndex: sourceIndex });
+                // Dragging from Card (Image) -> Always single item for now
+                tagsToDrag = [tagId];
             }
+
+            // Set drag data
+            const dragData = JSON.stringify({
+                tagIds: tagsToDrag, // Array of IDs
+                sourceIndex: sourceIndex // -1 means from Tag Pool, >=0 means from Image Card
+            });
             
-            const dragDataStr = JSON.stringify(dragPayload);
-            event.dataTransfer.setData('application/json', dragDataStr);
-            event.dataTransfer.setData('text/plain', dragDataStr); // Fallback
+            event.dataTransfer.setData('application/json', dragData);
+            event.dataTransfer.setData('text/plain', dragData); // Fallback
             
             // Visual feedback
             setTimeout(() => {
                 event.target.style.opacity = '0.5';
+                // If dragging multiple, maybe dim others too?
+                if (tagsToDrag.length > 1) {
+                    document.querySelectorAll('.draggable-tag.selected').forEach(el => el.style.opacity = '0.5');
+                }
             }, 0);
         }
 
         function handleTagDragEnd(event) {
             event.target.style.opacity = '1';
+            // Restore opacity for all
+            document.querySelectorAll('.draggable-tag').forEach(el => el.style.opacity = '1');
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         }
 
@@ -1291,37 +1322,33 @@
             try {
                 const data = JSON.parse(dataStr);
                 
-                // Normalize to array of items
-                let items = [];
-                if (data.items && Array.isArray(data.items)) {
-                    items = data.items;
+                // Normalize to array (handle legacy single tagId if needed)
+                let tagIds = [];
+                if (data.tagIds) {
+                    tagIds = data.tagIds;
                 } else if (data.tagId) {
-                    // Backward compatibility / Single item fallback
-                    items = [{ tagId: data.tagId, sourceIndex: data.sourceIndex }];
+                    tagIds = [data.tagId];
                 } else {
-                    return; // Invalid data
+                    return;
                 }
 
+                const sourceIndex = parseInt(data.sourceIndex);
                 const targetIdx = parseInt(targetIndex);
-                let hasChanges = false;
 
-                items.forEach(item => {
-                    const tagId = item.tagId;
-                    const sourceIndex = parseInt(item.sourceIndex);
+                console.log(`Dropping tags [${tagIds.join(',')}] from ${sourceIndex} to ${targetIdx}`);
 
-                    // Case 1: Dropped onto same location -> Do nothing
-                    if (sourceIndex === targetIdx) return;
+                // Case 1: Dropped onto same location -> Do nothing
+                if (sourceIndex === targetIdx) return;
 
+                tagIds.forEach(tagId => {
                     // Case 2: From Pool (-1) to Card (>=0)
                     if (sourceIndex === -1 && targetIdx >= 0) {
                         imageDataList[targetIdx].aspects[tagId] = 1;
-                        hasChanges = true;
                     }
                     
                     // Case 3: From Card (>=0) to Pool (-1)
                     else if (sourceIndex >= 0 && targetIdx === -1) {
                         delete imageDataList[sourceIndex].aspects[tagId];
-                        hasChanges = true;
                     }
 
                     // Case 4: From Card A to Card B
@@ -1332,13 +1359,15 @@
                         
                         // Add to Target
                         imageDataList[targetIdx].aspects[tagId] = weight;
-                        hasChanges = true;
                     }
                 });
 
-                if (hasChanges) {
-                    renderUI();
+                // Clear selection if successfully dropped from Pool to Card
+                if (sourceIndex === -1 && targetIdx >= 0) {
+                    selectedTags.clear();
                 }
+
+                renderUI();
 
             } catch (e) {
                 console.error("Invalid drag data", e);
@@ -1363,35 +1392,34 @@
             // Filter available tags
             const availableAspects = aspects.filter(a => !assignedTags.has(a.id));
 
+            // Clean up selectedTags (remove those that are no longer available)
+            // This prevents "ghost" selections
+            const availableIds = new Set(availableAspects.map(a => a.id));
+            for (const tId of selectedTags) {
+                if (!availableIds.has(tId)) {
+                    selectedTags.delete(tId);
+                }
+            }
+
             if (availableAspects.length === 0) {
                 container.innerHTML = '<span style="color:#ccc; font-size:0.8rem; width:100%; text-align:center; padding:0.5rem;">所有标签已分配完毕</span>';
                 return;
             }
 
-            // Clean up selected tags that are now assigned
-            // If a tag is assigned to ANY image, it disappears from pool, so we should remove it from selection set
-            const allAssignedTags = new Set();
-            imageDataList.forEach(item => {
-                Object.keys(item.aspects).forEach(key => allAssignedTags.add(key));
-            });
-            // Remove assigned tags from selection
-            for (let tagId of selectedPoolTags) {
-                if (allAssignedTags.has(tagId)) {
-                    selectedPoolTags.delete(tagId);
-                }
-            }
-
             availableAspects.forEach(aspect => {
                 const tag = document.createElement('div');
                 tag.className = 'draggable-tag';
-                if (selectedPoolTags.has(aspect.id)) {
+                if (selectedTags.has(aspect.id)) {
                     tag.classList.add('selected');
                 }
                 tag.draggable = true;
                 tag.innerHTML = `<i class="fa-solid ${aspect.icon}"></i> ${aspect.id}`;
+                
+                // Attach events
                 tag.ondragstart = (e) => handleTagDragStart(e, aspect.id, -1);
                 tag.ondragend = handleTagDragEnd;
-                tag.onclick = () => togglePoolTagSelection(aspect.id);
+                tag.onclick = (e) => handleTagClick(e, aspect.id);
+                
                 container.appendChild(tag);
             });
         }
