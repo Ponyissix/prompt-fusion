@@ -1684,6 +1684,20 @@
                 return;
             }
 
+            // Check if any image has tags assigned
+            let hasTags = false;
+            for (let item of imageDataList) {
+                if (Object.keys(item.aspects).length > 0) {
+                    hasTags = true;
+                    break;
+                }
+            }
+
+            if (!hasTags) {
+                alert("请先为图片分配至少一个标签！\n您可以从顶部的标签池拖拽标签到图片上，或点击“自定义”添加标签。");
+                return;
+            }
+
             const btn = document.querySelector('button[onclick="generatePrompts()"]');
             const btnText = document.getElementById('btnText');
             const spinner = document.getElementById('loadingSpinner');
