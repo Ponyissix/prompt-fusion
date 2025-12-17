@@ -297,22 +297,23 @@
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            width: 540px; /* Fixed Width */
-            min-width: 540px; /* Enforce Fixed Width */
+            width: auto; /* Allow flexible width */
+            min-width: 540px; 
+            max-width: 90vw;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(0,0,0,0.06);
             padding: 0.6rem 0.8rem 0.6rem 1.5rem;
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Ensure spacing */
-            gap: 0; /* Remove gap, use space-between */
+            justify-content: space-between; 
+            gap: 1rem; /* Added gap back for flexibility */
             z-index: 100;
             box-shadow: 
                 0 4px 6px -1px rgba(0, 0, 0, 0.05),
                 0 20px 40px -5px rgba(0, 0, 0, 0.1);
             border-radius: 100px;
-            box-sizing: border-box; /* Fix width calculation */
+            box-sizing: border-box; 
         }
 
         .controls-hint {
@@ -886,6 +887,7 @@
                         justify-content: center;
                         background: var(--text-main);
                         transition: all 0.2s;
+                        flex-shrink: 0;
                     ">
                         <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
                     </div>
