@@ -212,6 +212,112 @@ def merge_prompts(analyses, precision_level, use_thinking=True):
     )
     return response.choices[0].message.content
 
+def generate_fused_prompt_directly(images, options_map, precision_level, use_thinking=True):
+    try:
+        start_time = time.time()
+        
+        # Determine detail level
+        word_count = "200"
+        detail_instruction = "简明扼要"
+        if precision_level == "2":
+            word_count = "400"
+            detail_instruction = "标准详细"
+        elif precision_level == "3":
+            word_count = "800"
+            detail_instruction = "极其详尽，包含所有微小细节"
+
+        # Aspect Definitions (Reused)
+        aspect_prompts = {
+            "风格": "画面整体风格（如：复古胶片、赛博朋克、油画等）。",
+            "背景": "环境背景细节（地点、天气、氛围）。",
+            "构图": "镜头角度、构图方式（如：俯视、三分法、特写）。",
+            "人物外貌": "人物的年龄、种族、发型、五官特征。",
+            "人物动作": "人物的具体动作、姿态、表情。",
+            "穿搭": "服装款式、材质、颜色、配饰。",
+            "主体物描述": "画面主要物体（非人物）的详细外观。",
+            "光影描述": "光线来源、质感、阴影分布。",
+            "画面配色": "主色调、配色方案。",
+            "摄像机角度": "仅描述拍摄视角和镜头类型。",
+            "文字/水印": "识别并转录画面中的所有可见文字、水印、LOGO信息。"
+        }
+
+        # Build message content
+        content = []
+        
+        intro_text = f"""
+你是一个专业的AI艺术提示词生成专家。
+任务：请分析以下 {len(images)} 张图片，结合每张图片的【指定标签】，直接生成一个融合后的、高质量的Stable Diffusion中文提示词。
+
+要求：
+1. **直接融合**：不要分开描述每张图！请直接提取所有图片中的共性特征和优秀细节，融合成一个连贯、统一的画面描述。
+2. **标签优先**：每张图片都有对应的【指定标签】，请重点关注这些标签对应的内容。如果某张图没有选择“文字/水印”标签，请假装那张图中没有文字。
+3. **详细程度**：{detail_instruction}（约{word_count}字）。
+4. **输出格式**：
+   [Chinese]
+   (这里写最终融合后的中文描述)
+
+**严厉约束**：
+- 只输出 [Chinese] 部分。
+- 绝对禁止输出任何备注、解释、自我纠正或开场白！
+- 绝对禁止输出“注：...”或“因为...”等内容。
+- 如果标签之间有冲突（例如一张图是白天，一张是黑夜），请自动选择一个更具美感的方案进行融合，不要询问也不要解释。
+"""
+        content.append({"type": "text", "text": intro_text})
+
+        for idx, image_file in enumerate(images):
+            # Encode image
+            base64_img = encode_image(image_file)
+            image_file.seek(0) # Reset pointer
+            
+            # Get aspects
+            selected_aspects = options_map.get(str(idx), [])
+            
+            # Sort aspects
+            normalized_aspects = []
+            if selected_aspects and isinstance(selected_aspects[0], dict):
+                normalized_aspects = sorted(selected_aspects, key=lambda x: x.get('weight', 1), reverse=True)
+            else:
+                normalized_aspects = [{'id': a, 'weight': 1} for a in selected_aspects]
+                
+            aspects_desc = []
+            for item in normalized_aspects:
+                aspect = item['id']
+                weight = item.get('weight', 1)
+                if aspect in aspect_prompts:
+                    desc = aspect_prompts[aspect]
+                    if str(weight) == '2':
+                         aspects_desc.append(f"【核心权重!!!】{aspect}: {desc}")
+                    else:
+                         aspects_desc.append(f"{aspect}: {desc}")
+            
+            aspects_str = "\n".join(aspects_desc) if aspects_desc else "无特定标签约束，请综合分析画面。"
+
+            content.append({"type": "image_url", "image_url": {"url": base64_img}})
+            content.append({"type": "text", "text": f"\n[图片 {idx+1} 的参考标签]：\n{aspects_str}\n"})
+
+        content.append({"type": "text", "text": "\n请开始直接生成最终融合后的中文提示词："})
+
+        # Call Model
+        extra_body = {}
+        if use_thinking:
+            extra_body["thinking"] = {"type": "enabled"}
+        else:
+            extra_body["thinking"] = {"type": "disabled"}
+
+        response = client.chat.completions.create(
+            model=MODEL_ID,
+            messages=[
+                {"role": "user", "content": content}
+            ],
+            extra_body=extra_body
+        )
+        
+        return response.choices[0].message.content
+
+    except Exception as e:
+        print(f"Error in direct fusion: {e}")
+        raise e
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -235,49 +341,18 @@ def generate():
     except:
         return jsonify({'error': 'Invalid options format'}), 400
 
-    # Parallel processing
-    individual_prompts = [None] * len(images)
+    # Parallel processing replaced by Direct Fusion
+    individual_prompts = ["(Direct Fusion Mode - Individual analysis skipped)"] * len(images)
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        future_to_idx = {}
-        for idx, image in enumerate(images):
-            # keys might be strings "0", "1"...
-            aspects = options_map.get(str(idx), [])
-            future = executor.submit(analyze_single_image, image, aspects, precision)
-            future_to_idx[future] = idx
-            
-        for future in concurrent.futures.as_completed(future_to_idx):
-            idx = future_to_idx[future]
-            try:
-                result = future.result()
-                individual_prompts[idx] = result
-            except Exception as e:
-                individual_prompts[idx] = f"Error: {str(e)}"
-
-    # Merge prompts or use single result
     try:
-        # Check if any individual analysis failed with SetLimitExceeded
-        limit_exceeded = False
-        for prompt in individual_prompts:
-            if prompt and "SetLimitExceeded" in str(prompt):
-                limit_exceeded = True
-                break
-        
-        if limit_exceeded:
-             final_prompt = "【系统提示】您的火山引擎账户余额不足或已达到“安全体验模式”的限额。\n请前往火山引擎控制台(console.volcengine.com)充值或调整模型限额配置。\n(错误代码: SetLimitExceeded)"
-        elif len(individual_prompts) == 1 and individual_prompts[0] and "Error" not in individual_prompts[0]:
-            # Optimization: Skip merge step for single image
-            raw_result = individual_prompts[0]
-            # Convert tags to match final format
-            final_prompt = raw_result.replace("[Chinese Analysis]", "").strip()
-        else:
-            final_prompt = merge_prompts(individual_prompts, precision, use_thinking).replace("[Chinese]", "").strip()
+        final_prompt_raw = generate_fused_prompt_directly(images, options_map, precision, use_thinking)
+        final_prompt = final_prompt_raw.replace("[Chinese]", "").strip()
     except Exception as e:
         error_str = str(e)
         if "SetLimitExceeded" in error_str:
             final_prompt = "【系统提示】您的火山引擎账户余额不足或已达到“安全体验模式”的限额。\n请前往火山引擎控制台(console.volcengine.com)充值或调整模型限额配置。\n(错误代码: SetLimitExceeded)"
         else:
-            final_prompt = f"Error merging prompts: {error_str}"
+            final_prompt = f"Error generating prompts: {error_str}"
 
     return jsonify({
         'final_prompt': final_prompt,
