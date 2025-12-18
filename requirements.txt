@@ -1,5 +1,6 @@
 flask
-volcengine-python-sdk
+volcengine-python-sdk[ark]
+httpx
 python-dotenv
 Pillow
 gunicorn
