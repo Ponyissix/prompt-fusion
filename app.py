@@ -164,6 +164,8 @@ def analyze_single_image(image_file, selected_aspects, precision_level):
         return response.choices[0].message.content
     except Exception as e:
         print(f"Error analyzing image {image_file.filename}: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Error: {str(e)}"
 
 def merge_prompts(analyses, precision_level, use_thinking=True):
@@ -418,6 +420,8 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
 
     except Exception as e:
         print(f"Error in direct fusion: {e}")
+        import traceback
+        traceback.print_exc()
         raise e
 
 @app.route('/')
