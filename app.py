@@ -17,11 +17,18 @@ app = Flask(__name__)
 API_KEY = os.getenv("ARK_API_KEY")
 MODEL_ID = os.getenv("MODEL_ID", "doubao-seed-1-6-flash-250828")
 
-client = Ark(
-    api_key=API_KEY,
-    base_url="https://ark.cn-beijing.volces.com/api/v3",
-    timeout=900
-)
+client = None
+if API_KEY:
+    try:
+        client = Ark(
+            api_key=API_KEY,
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
+            timeout=900
+        )
+    except Exception as e:
+        print(f"Warning: Failed to initialize Ark client: {e}")
+else:
+    print("Warning: ARK_API_KEY environment variable is not set. Application will start but generation will fail.")
 
 def encode_image(file_storage):
     # Resize image to max 1024x1024 to speed up processing
@@ -169,6 +176,9 @@ def analyze_single_image(image_file, selected_aspects, precision_level):
         return f"Error: {str(e)}"
 
 def merge_prompts(analyses, precision_level, use_thinking=True):
+    if not client:
+        return "Error: Ark client is not initialized. Please check ARK_API_KEY."
+
     # If only one analysis, just format it
     combined_analysis = "\n\n---\n\n".join(analyses)
     
@@ -218,6 +228,9 @@ def merge_prompts(analyses, precision_level, use_thinking=True):
 
 def generate_fused_prompt_directly(images, options_map, precision_level, use_thinking=True):
     try:
+        if not API_KEY:
+             return "Error: ARK_API_KEY environment variable is missing. Please configure it in your deployment settings."
+
         start_time = time.time()
         # Create a local client instance for thread safety
         local_client = Ark(
@@ -495,6 +508,9 @@ def translate():
     if not text:
         return jsonify({'error': 'No text provided'}), 400
 
+    if not client:
+        return jsonify({'error': 'Ark client is not initialized. Please check ARK_API_KEY.'}), 500
+
     try:
         # Create a new translation prompt
         prompt = f"""
@@ -526,4 +542,5 @@ def translate():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=True, host='0.0.0.0', port=port)
