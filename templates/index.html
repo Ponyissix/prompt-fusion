@@ -257,10 +257,11 @@
 
         .card-body {
             padding: 1rem;
-            flex: 0 0 auto; /* Allow body to grow with content */
-            overflow: visible; /* Remove internal scrolling */
+            flex: 1; /* Allow body to fill remaining space */
+            overflow: hidden; /* Handle internal scrolling */
             display: flex;
             flex-direction: column;
+            padding-bottom: 1.5rem; /* Add extra padding at bottom */
         }
         
         /* Custom scrollbar for card body */
@@ -337,6 +338,8 @@
             gap: 0.6rem;
             transition: all 0.2s;
             min-height: 140px;
+            overflow-y: auto; /* Enable scrolling for tags */
+            margin-bottom: 0.5rem; /* Space from bottom edge */
         }
 
         .card-drop-zone.drag-over {
@@ -923,13 +926,70 @@
             justify-content: center;
         }
 
+        /* Standard Card Modal Style (White Background) */
+        .modal-content-card {
+            background: #FFFFFF !important;
+            width: 90% !important;
+            max-width: 420px !important;
+            height: auto !important;
+            border-radius: 16px !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch !important; /* Override center */
+            justify-content: flex-start !important;
+            padding: 0 !important;
+            overflow: hidden;
+        }
+
         @keyframes slideUp {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
 
-        .modal-header, .modal-footer, .modal-section {
-            display: none !important;
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #FAFAFA;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .close-modal-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-modal-btn:hover {
+            background: rgba(0,0,0,0.05);
+            color: var(--text-main);
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            background: #FAFAFA;
+            gap: 1rem;
         }
 
         .modal-body {
@@ -940,6 +1000,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        .modal-content-card .modal-body {
+            padding: 1.5rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            background: white;
         }
 
         .modal-image-preview {
@@ -1175,20 +1243,21 @@
         </div>
 
         <!-- Custom Tag Input Modal -->
-        <div id="customTagModal" class="modal hidden">
-            <div class="modal-content" style="max-width: 400px; height: auto;">
+        <div id="customTagModal" class="modal hidden" onclick="if(event.target === this) closeCustomTagModal()">
+            <div class="modal-content modal-content-card">
                 <div class="modal-header">
                     <h3>添加自定义标签</h3>
                     <button class="close-modal-btn" onclick="closeCustomTagModal()">
                         <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                <div class="modal-body" style="padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div class="modal-body">
                     <p style="margin: 0; color: var(--text-sub); font-size: 0.9rem;">请输入想要分析的标签名称（例如：鞋子摆放、猫咪表情）：</p>
-                    <input type="text" id="customTagInput" class="custom-tag-input" style="width: 100%; font-size: 1rem; padding: 0.5rem;" placeholder="输入标签名称..." onkeydown="if(event.key === 'Enter') confirmAddCustomTag()">
+                    <input type="text" id="customTagInput" class="custom-tag-input" style="width: 100%; font-size: 1rem; padding: 0.6rem; border-radius: 6px; background: white;" placeholder="输入标签名称..." onkeydown="if(event.key === 'Enter') confirmAddCustomTag()">
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-generate" onclick="confirmAddCustomTag()" style="height: 36px; font-size: 0.85rem; padding: 0 1rem;">
+                    <button class="btn-secondary-small" onclick="closeCustomTagModal()" style="padding: 0.5rem 1rem;">取消</button>
+                    <button class="btn-generate" onclick="confirmAddCustomTag()" style="height: 36px; font-size: 0.85rem; padding: 0 1rem; margin: 0;">
                         确认添加
                     </button>
                 </div>
