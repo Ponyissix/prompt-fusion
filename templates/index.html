@@ -456,9 +456,10 @@
             padding: 0.2rem 0.6rem;
             border-radius: 12px;
             font-weight: 600;
-            min-width: 48px;
+            min-width: 60px; /* Increased fixed width to accommodate longest text "超精细" without resizing */
             text-align: center;
             transition: all 0.2s;
+            display: inline-block; /* Ensure width is respected */
         }
 
         /* Custom Range Slider Styling - Standard Model */
