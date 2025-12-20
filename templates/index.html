@@ -79,7 +79,8 @@
         }
 
         .main-container {
-            max-width: 960px;
+            max-width: 1400px; /* Significantly increased from 960px/95% */
+            width: 95%;
             margin: 3rem auto;
             padding: 0 1.5rem;
             padding-bottom: 6rem;
@@ -195,14 +196,14 @@
         .upload-card-small {
             background: transparent;
             border: 2px dashed #D3D1CB;
-            border-radius: 4px;
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            /* height: 420px; Removed strict height */
-            min-height: 480px; /* Increased to match average populated card height */
-            height: 100%; /* Force fill grid cell */
+            height: 480px; /* Fixed height matching image cards */
+            min-height: 480px; 
+            /* height: 100%; Removed flexible height */
             width: 100%;   /* Fill grid cell */
             cursor: pointer;
             transition: all 0.2s ease;
@@ -219,8 +220,8 @@
         /* Grid Layout */
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Reduced min-width to fit more columns */
+            gap: 2rem; /* Increased gap for cleaner layout */
             margin-bottom: 3rem; /* Reduced from 240px to 3rem since result container handles separation now */
             grid-auto-rows: 1fr; /* Make all rows same height */
         }
@@ -235,13 +236,13 @@
         .image-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 4px;
-            overflow: hidden;
+            border-radius: 16px; /* Unified border radius */
+            overflow-y: auto; /* Enable scrolling for the whole card */
+            overflow-x: hidden;
             box-shadow: var(--shadow-sm);
             transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
-            /* height: 420px; Removed strict height */
-            min-height: 480px; /* Matched with upload card */
-            height: 100%; /* Force fill grid cell */
+            height: 480px; /* Fixed height */
+            min-height: 480px; 
             display: flex;
             flex-direction: column;
             box-sizing: border-box; /* Ensure border is included in height */
@@ -255,8 +256,8 @@
 
         .card-body {
             padding: 1rem;
-            flex: 1;
-            /* overflow-y: auto; Removed scrolling */
+            flex: 0 0 auto; /* Allow body to grow with content */
+            overflow: visible; /* Remove internal scrolling */
             display: flex;
             flex-direction: column;
         }
@@ -354,28 +355,119 @@
         }
 
 
-        /* Bottom Fixed Controls - Refined */
+        /* Layout Refactoring */
+        .navbar {
+            position: fixed; /* Fix navbar */
+            width: 100%;
+            height: 70px;
+            box-sizing: border-box;
+        }
+
+        .main-container {
+            max-width: none;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            padding-top: 90px; /* Nav height + padding */
+            padding-bottom: 220px; /* Footer height + padding */
+            padding-right: 450px; /* Right sidebar width + padding (Increased for breathing room) */
+            padding-left: 2rem;
+            box-sizing: border-box;
+        }
+
+        .left-column {
+            width: 100%;
+        }
+
+        .right-column {
+            position: fixed;
+            right: 2rem;
+            top: 90px; /* Aligned with main container padding */
+            bottom: 240px; /* Above footer with gap */
+            width: 380px;
+            height: auto !important;
+            background: white;
+            border-radius: 16px; /* Unified border radius */
+            border: 1px solid rgba(0,0,0,0.06);
+            padding: 2rem;
+            overflow-y: auto;
+            z-index: 90;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #resultPlaceholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-sub);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            margin: 0;
+            min-height: 200px;
+        }
+
+        @keyframes magic-pulse {
+            0% { transform: scale(1) rotate(0deg); opacity: 0.5; filter: drop-shadow(0 0 0 rgba(225, 98, 89, 0)); }
+            50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 15px rgba(225, 98, 89, 0.6)); }
+            100% { transform: scale(1) rotate(0deg); opacity: 0.5; filter: drop-shadow(0 0 0 rgba(225, 98, 89, 0)); }
+        }
+
+        @keyframes pulse-text {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .is-generating .fa-wand-magic-sparkles {
+            animation: magic-pulse 2s infinite ease-in-out;
+            color: var(--accent);
+        }
+
+        .is-generating p {
+            animation: pulse-text 2s infinite ease-in-out;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Custom scrollbar for right column */
+        .right-column::-webkit-scrollbar {
+            width: 6px;
+        }
+        .right-column::-webkit-scrollbar-thumb {
+            background: #E0E0E0;
+            border-radius: 3px;
+        }
+        .right-column::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Bottom Fixed Controls - Full Width Footer */
         .controls-section {
             position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%; 
-            max-width: 800px;
+            bottom: 0;
+            left: 0;
+            transform: none;
+            width: 100%; 
+            max-width: none;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(0,0,0,0.08);
-            padding: 1rem 1.5rem;
+            border: none;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding: 1rem 2rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
             z-index: 100;
-            box-shadow: 
-                0 10px 30px -5px rgba(0, 0, 0, 0.1),
-                0 4px 10px -2px rgba(0, 0, 0, 0.05);
-            border-radius: 24px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            border-radius: 0;
             box-sizing: border-box; 
-            transition: all 0.3s ease;
+            height: auto;
+            min-height: 180px; /* Ensure space */
         }
 
         .controls-tags-area {
@@ -419,18 +511,30 @@
         .controls-actions-area {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .controls-hint {
-            display: none !important;
+            justify-content: space-between; /* Use space-between to push button to right, but we want consistent spacing */
+            /* Actually, better to use flex-start and manual spacing or grid */
+            justify-content: flex-start; 
+            gap: 2rem; /* Consistent large gap between groups */
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem; /* Consistent internal gap */
+        }
+        
+        /* Remove the manual margin/border styling from HTML inline styles and use class instead */
+        .divider-vertical {
+            height: 24px;
+            width: 1px;
+            background-color: var(--border);
+            margin: 0; /* Gap handled by parent flex gap */
+        }
+        
+        .btn-generate {
+            /* Push to right automatically if we want, OR keep it close */
+            margin-left: auto; /* This pushes the button to the far right */
+            /* If user wants EQUAL spacing between 3 parts (Slider, Checkbox, Button), we should remove margin-left: auto */
         }
 
         .label-group {
@@ -756,16 +860,19 @@
         }
 
         .modal-content {
-            background: var(--bg-card);
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
+            background: transparent;
+            width: auto;
+            max-width: 95vw;
+            max-height: 95vh;
             border-radius: 8px;
-            box-shadow: var(--shadow-card);
+            box-shadow: none;
             display: flex;
             flex-direction: column;
             animation: slideUp 0.3s ease;
-            border: 1px solid var(--border);
+            border: none;
+            position: relative;
+            align-items: center;
+            justify-content: center;
         }
 
         @keyframes slideUp {
@@ -773,57 +880,54 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .close-modal-btn {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: var(--text-sub);
-            padding: 0.5rem;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-        .close-modal-btn:hover {
-            background: rgba(0,0,0,0.05);
-            color: var(--text-main);
+        .modal-header, .modal-footer, .modal-section {
+            display: none !important;
         }
 
         .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            flex: 1;
-            background: #FAFAFA;
+            padding: 0;
+            overflow: hidden;
+            flex: 0 0 auto;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .modal-image-preview {
-            width: 100%;
-            height: 200px;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 90vh;
             object-fit: contain;
-            background: #f0f0f0;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 1rem;
+            background: transparent;
+            border: none;
+            margin: 0;
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
+        
+        .close-modal-floating {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             display: flex;
-            justify-content: flex-end;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .close-modal-floating:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
         }
 
         .modal-section-header {
@@ -949,47 +1053,75 @@
     </nav>
 
     <div class="main-container">
-
-
-        <!-- Image Grid (including Add Card) -->
-        <div id="imageContainer" class="content-grid" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
-            <!-- Static Upload Card will be injected via JS -->
+        
+        <!-- Left Column: Images (Direct child now) -->
+        <div class="left-column">
+            <!-- Image Grid (including Add Card) -->
+            <div id="imageContainer" class="content-grid" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
+                <!-- Static Upload Card will be injected via JS -->
+            </div>
         </div>
+
+        <!-- Right Column: Results (Fixed Sidebar) -->
+        <div class="right-column">
+            <!-- Results Section -->
+            <div id="resultsSection" class="result-container hidden" style="margin-top: 0; border-top: none; padding-top: 0; margin-bottom: 2rem;">
+                    <div class="result-header">
+                        <h2 class="result-title">最终融合提示词</h2>
+                    </div>
+                    
+                    <div class="result-body">
+                        <!-- Chinese Prompt -->
+                        <div class="prompt-group">
+                            <div class="prompt-header">
+                                <div class="prompt-label">
+                                    <i class="fa-solid fa-language"></i> 中文结构化解析
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <button onclick="translatePrompt()" id="headerTranslateBtn" class="copy-btn" style="font-size: 0.8rem; display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.05); padding: 0.2rem 0.6rem; border-radius: 4px;">
+                                        <i class="fa-solid fa-language"></i> 翻译为英文
+                                    </button>
+                                    <button onclick="copyToClipboard('chinesePrompt')" class="copy-btn">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="prompt-content" id="chinesePrompt" onclick="copyToClipboard('chinesePrompt')" title="点击复制"></div>
+                        </div>
+
+                        <!-- English Prompt (Initially Hidden) -->
+                        <div class="prompt-group hidden" id="englishGroup">
+                            <div class="prompt-header">
+                                <div class="prompt-label">
+                                    <i class="fa-solid fa-terminal"></i> 英文提示词 (SD/MJ)
+                                </div>
+                                <button onclick="copyToClipboard('englishPrompt')" class="copy-btn">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="prompt-content" id="englishPrompt" onclick="copyToClipboard('englishPrompt')" title="点击复制"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Placeholder when hidden -->
+                <div id="resultPlaceholder">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p style="margin: 0; font-size: 0.9rem;">生成的提示词将显示在这里</p>
+                </div>
+            </div>
         
         <!-- Hidden file input -->
         <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleFileSelect(event)">
 
         <!-- Modal -->
-        <div id="promptModal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>单图提示词分析</h3>
-                    <button class="close-modal-btn" onclick="closeModal()">
-                        <i class="fa-solid fa-times"></i>
-                    </button>
-                </div>
+        <div id="promptModal" class="modal hidden" onclick="if(event.target === this) closeModal()">
+            <div class="modal-content" style="position: relative;">
+                <button class="close-modal-floating" onclick="closeModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
                 <div class="modal-body">
                     <img id="modalImage" class="modal-image-preview" src="" alt="Preview">
-                    <div class="modal-section">
-                        <div class="modal-section-header">
-                            <span class="modal-section-title"><i class="fa-solid fa-language"></i> 中文结构化解析</span>
-                            <button class="copy-btn-small" onclick="copyModalSection('modalChineseContent')">复制</button>
-                        </div>
-                        <pre id="modalChineseContent" class="prompt-content" style="white-space: pre-wrap; font-size: 0.85rem; color: var(--text-main); margin-top: 0;"></pre>
-                    </div>
-                    
-                    <div class="modal-section" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
-                        <div class="modal-section-header">
-                            <span class="modal-section-title"><i class="fa-solid fa-terminal"></i> 英文提示词 (SD/MJ)</span>
-                            <button class="copy-btn-small" onclick="copyModalSection('modalEnglishContent')">复制</button>
-                        </div>
-                        <pre id="modalEnglishContent" class="prompt-content" style="white-space: pre-wrap; font-size: 0.85rem; color: var(--text-main); margin-top: 0;"></pre>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="copy-btn-modal" onclick="copyFullModalContent()">
-                        <i class="fa-regular fa-copy"></i> 复制全部
-                    </button>
                 </div>
             </div>
         </div>
@@ -1034,42 +1166,44 @@
 
             <!-- Bottom Row: Actions -->
             <div class="controls-actions-area">
-                <!-- Group Left Controls -->
-                <div style="display: flex; align-items: center; gap: 0;">
-                    <div class="control-group">
-                        <div class="label-group">
-                            <i class="fa-solid fa-sliders"></i>
-                            <span>精确度</span>
-                        </div>
-                        <div class="slider-wrapper">
-                            <input type="range" id="precisionRange" min="1" max="3" value="2" step="1">
-                            <span id="precisionValue" class="value-tag">标准</span>
-                        </div>
+                <!-- Precision Slider Group -->
+                <div class="control-group">
+                    <div class="label-group">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>精确度</span>
                     </div>
-
-                    <!-- Deep Thinking Toggle -->
-                    <div class="control-group" style="flex: 0 0 auto; margin-left: 1.5rem; border-left: 1px solid var(--border); padding-left: 1.5rem;">
-                        <div class="label-group" style="gap: 0.5rem; cursor: pointer; user-select: none;" onclick="toggleThinking()">
-                            <div id="thinkingCheckbox" style="
-                                width: 16px; 
-                                height: 16px; 
-                                border: 2px solid var(--text-main); 
-                                border-radius: 3px; 
-                                display: flex; 
-                                align-items: center; 
-                                justify-content: center;
-                                background: var(--text-main);
-                                transition: all 0.2s;
-                                flex-shrink: 0;
-                            ">
-                                <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
-                            </div>
-                            <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考 (推荐)</span>
-                            <input type="checkbox" id="thinkingCheck" checked style="display: none;">
-                        </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="precisionRange" min="1" max="3" value="2" step="1">
+                        <span id="precisionValue" class="value-tag">标准</span>
                     </div>
                 </div>
 
+                <!-- Divider -->
+                <div class="divider-vertical"></div>
+
+                <!-- Deep Thinking Toggle Group -->
+                <div class="control-group">
+                    <div class="label-group" style="gap: 0.5rem; cursor: pointer; user-select: none;" onclick="toggleThinking()">
+                        <div id="thinkingCheckbox" style="
+                            width: 16px; 
+                            height: 16px; 
+                            border: 2px solid var(--text-main); 
+                            border-radius: 3px; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center;
+                            background: var(--text-main);
+                            transition: all 0.2s;
+                            flex-shrink: 0;
+                        ">
+                            <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
+                        </div>
+                        <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考 (推荐)</span>
+                        <input type="checkbox" id="thinkingCheck" checked style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Generate Button (Pushed to right via margin-left: auto) -->
                 <button onclick="generatePrompts()" class="btn-generate">
                     <span id="btnText">生成提示词</span>
                     <div id="loadingSpinner" class="loader hidden"></div>
@@ -1080,47 +1214,7 @@
             <p id="errorMessage" style="display: none; position: absolute; bottom: 100%; left: 0; background: #ffe2dd; color: #d44c47; padding: 0.5rem 1rem; border-radius: 4px; width: 100%; text-align: center; margin-bottom: 10px;" class="hidden"></p>
         </div>
 
-        <!-- Results Section -->
-        <div id="resultsSection" class="result-container hidden">
-            <div class="result-header">
-                <h2 class="result-title">最终融合提示词</h2>
-            </div>
-            
-            <div class="result-body">
-                <!-- Chinese Prompt -->
-                <div class="prompt-group">
-                    <div class="prompt-header">
-                        <div class="prompt-label">
-                            <i class="fa-solid fa-language"></i> 中文结构化解析
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <button onclick="translatePrompt()" id="headerTranslateBtn" class="copy-btn" style="font-size: 0.8rem; display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.05); padding: 0.2rem 0.6rem; border-radius: 4px;">
-                                <i class="fa-solid fa-language"></i> 翻译为英文
-                            </button>
-                            <button onclick="copyToClipboard('chinesePrompt')" class="copy-btn">
-                                <i class="fa-regular fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="prompt-content" id="chinesePrompt" onclick="copyToClipboard('chinesePrompt')" title="点击复制"></div>
-                </div>
-
-                <!-- English Prompt (Initially Hidden) -->
-                <div class="prompt-group hidden" id="englishGroup">
-                    <div class="prompt-header">
-                        <div class="prompt-label">
-                            <i class="fa-solid fa-terminal"></i> 英文提示词 (SD/MJ)
-                        </div>
-                        <button onclick="copyToClipboard('englishPrompt')" class="copy-btn">
-                            <i class="fa-regular fa-copy"></i>
-                        </button>
-                    </div>
-                    <div class="prompt-content" id="englishPrompt" onclick="copyToClipboard('englishPrompt')" title="点击复制"></div>
-                </div>
-
-                <!-- Translate Button Removed (Moved to Header) -->
-            </div>
-        </div>
+        <!-- Results Section Removed from here -->
     </div>
 
     <script>
@@ -1146,40 +1240,14 @@
         let currentModalFullPrompt = "";
 
         function showModal(index) {
-            const prompt = document.getElementById(`prompt-data-${index}`)?.value;
-            const chineseEl = document.getElementById('modalChineseContent');
-            const englishEl = document.getElementById('modalEnglishContent');
             const imgEl = document.getElementById('modalImage');
-
+            
             // Set Image
             const item = imageDataList[index];
             if (item) {
                 imgEl.src = item.previewUrl;
             }
-
-            if (!prompt) {
-                chineseEl.textContent = "请先生成提示词...";
-                englishEl.textContent = "";
-                currentModalFullPrompt = "";
-            } else {
-                // Parse sections
-                let chineseText = "";
-                let englishText = "";
-                
-                if (prompt.includes("[Chinese Analysis]") && prompt.includes("[English Prompt]")) {
-                    const parts = prompt.split("[English Prompt]");
-                    chineseText = parts[0].replace("[Chinese Analysis]", "").trim();
-                    englishText = parts[1].trim();
-                } else {
-                    // Fallback for old format or errors
-                    chineseText = prompt;
-                    englishText = "Unable to parse structured English prompt.";
-                }
-
-                chineseEl.textContent = chineseText;
-                englishEl.textContent = englishText;
-                currentModalFullPrompt = prompt;
-            }
+            
             document.getElementById('promptModal').classList.remove('hidden');
         }
 
@@ -1723,12 +1791,15 @@
             const errorMsg = document.getElementById('errorMessage');
             const resultsSection = document.getElementById('resultsSection');
             const englishGroup = document.getElementById('englishGroup');
+            const placeholder = document.getElementById('resultPlaceholder');
 
             btn.disabled = true;
             btnText.textContent = "正在生成...";
             spinner.classList.remove('hidden');
             errorMsg.classList.add('hidden');
             resultsSection.classList.add('hidden');
+            placeholder.classList.remove('hidden'); // Show placeholder
+            placeholder.classList.add('is-generating'); // Start animation
             englishGroup.classList.add('hidden'); // Reset: Hide English
             
             // Reset Translate Button
@@ -1821,9 +1892,10 @@
                 });
 
                 resultsSection.classList.remove('hidden');
+                document.getElementById('resultPlaceholder').classList.add('hidden'); // Hide placeholder
                 
                 // Scroll to results
-                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); // No longer needed for sticky side panel
 
             } catch (err) {
                 errorMsg.textContent = "生成出错: " + err.message;
