@@ -1033,36 +1033,39 @@
 
             <!-- Bottom Row: Actions -->
             <div class="controls-actions-area">
-                <div class="control-group">
-                    <div class="label-group">
-                        <i class="fa-solid fa-sliders"></i>
-                        <span>精确度</span>
-                    </div>
-                    <div class="slider-wrapper">
-                        <input type="range" id="precisionRange" min="1" max="3" value="2" step="1">
-                        <span id="precisionValue" class="value-tag">标准</span>
-                    </div>
-                </div>
-
-                <!-- Deep Thinking Toggle -->
-                <div class="control-group" style="flex: 0 0 auto; margin-left: 1rem; border-left: 1px solid var(--border); padding-left: 1rem;">
-                    <div class="label-group" style="gap: 0.5rem; cursor: pointer; user-select: none;" onclick="toggleThinking()">
-                        <div id="thinkingCheckbox" style="
-                            width: 16px; 
-                            height: 16px; 
-                            border: 2px solid var(--text-main); 
-                            border-radius: 3px; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center;
-                            background: var(--text-main);
-                            transition: all 0.2s;
-                            flex-shrink: 0;
-                        ">
-                            <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
+                <!-- Group Left Controls -->
+                <div style="display: flex; align-items: center; gap: 0;">
+                    <div class="control-group">
+                        <div class="label-group">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>精确度</span>
                         </div>
-                        <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考 (推荐)</span>
-                        <input type="checkbox" id="thinkingCheck" checked style="display: none;">
+                        <div class="slider-wrapper">
+                            <input type="range" id="precisionRange" min="1" max="3" value="2" step="1">
+                            <span id="precisionValue" class="value-tag">标准</span>
+                        </div>
+                    </div>
+
+                    <!-- Deep Thinking Toggle -->
+                    <div class="control-group" style="flex: 0 0 auto; margin-left: 1.5rem; border-left: 1px solid var(--border); padding-left: 1.5rem;">
+                        <div class="label-group" style="gap: 0.5rem; cursor: pointer; user-select: none;" onclick="toggleThinking()">
+                            <div id="thinkingCheckbox" style="
+                                width: 16px; 
+                                height: 16px; 
+                                border: 2px solid var(--text-main); 
+                                border-radius: 3px; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center;
+                                background: var(--text-main);
+                                transition: all 0.2s;
+                                flex-shrink: 0;
+                            ">
+                                <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
+                            </div>
+                            <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考 (推荐)</span>
+                            <input type="checkbox" id="thinkingCheck" checked style="display: none;">
+                        </div>
                     </div>
                 </div>
 
