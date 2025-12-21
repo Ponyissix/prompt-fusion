@@ -501,7 +501,8 @@
             overflow-y: hidden;
             padding: 0.2rem;
             align-items: center;
-            scrollbar-width: thin;
+            scrollbar-width: none; /* Firefox: Hide scrollbar */
+            -ms-overflow-style: none; /* IE/Edge: Hide scrollbar */
             -webkit-overflow-scrolling: touch;
             mask-image: linear-gradient(to right, black 95%, transparent 100%); /* Fade out effect */
             -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%);
@@ -513,9 +514,9 @@
             white-space: nowrap;
         }
 
+        /* Webkit (Chrome/Safari): Hide scrollbar */
         .tag-pool-compact::-webkit-scrollbar {
-            height: 4px;
-            width: 4px;
+            display: none;
         }
 
         .settings-group {
@@ -1320,8 +1321,30 @@
                             ">
                                 <i class="fa-solid fa-check" style="font-size: 10px; color: white;"></i>
                             </div>
-                            <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考 (推荐)</span>
+                            <span style="font-size: 0.8rem; white-space: nowrap;" title="开启深度思考 (生成速度较慢，但质量更高)">深度思考</span>
                             <input type="checkbox" id="thinkingCheck" checked style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- JSON Output Toggle -->
+                    <div class="control-group">
+                        <div class="label-group" style="gap: 0.5rem; cursor: pointer; user-select: none;" onclick="toggleJsonOutput()">
+                            <div id="jsonCheckbox" style="
+                                width: 16px; 
+                                height: 16px; 
+                                border: 2px solid #ccc; 
+                                border-radius: 3px; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center;
+                                background: transparent;
+                                transition: all 0.2s;
+                                flex-shrink: 0;
+                            ">
+                                <i class="fa-solid fa-check" style="font-size: 10px; color: white; opacity: 0;"></i>
+                            </div>
+                            <span style="font-size: 0.8rem; white-space: nowrap;" title="以JSON格式输出结构化提示词">JSON输出</span>
+                            <input type="checkbox" id="jsonCheck" style="display: none;">
                         </div>
                     </div>
                 </div>
@@ -1930,6 +1953,7 @@
             const optionsMap = {};
             const precisionLevel = document.getElementById('precisionRange').value;
             const enableThinking = document.getElementById('thinkingCheck').checked;
+            const enableJson = document.getElementById('jsonCheck').checked;
 
             // Start Timer
             let seconds = 0;
@@ -1967,6 +1991,7 @@
             formData.append('options', JSON.stringify(optionsMap));
             formData.append('precision', precisionLevel);
             formData.append('thinking', enableThinking);
+            formData.append('json_output', enableJson);
 
 
             try {
@@ -2113,6 +2138,24 @@
         function toggleThinking() {
             const checkbox = document.getElementById('thinkingCheck');
             const visualBox = document.getElementById('thinkingCheckbox');
+            const icon = visualBox.querySelector('i');
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                visualBox.style.background = 'var(--text-main)';
+                visualBox.style.borderColor = 'var(--text-main)';
+                icon.style.opacity = '1';
+            } else {
+                visualBox.style.background = 'transparent';
+                visualBox.style.borderColor = '#ccc';
+                icon.style.opacity = '0';
+            }
+        }
+
+        function toggleJsonOutput() {
+            const checkbox = document.getElementById('jsonCheck');
+            const visualBox = document.getElementById('jsonCheckbox');
             const icon = visualBox.querySelector('i');
             
             checkbox.checked = !checkbox.checked;

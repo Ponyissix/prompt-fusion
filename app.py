@@ -226,7 +226,7 @@ def merge_prompts(analyses, precision_level, use_thinking=True):
     )
     return response.choices[0].message.content
 
-def generate_fused_prompt_directly(images, options_map, precision_level, use_thinking=True):
+def generate_fused_prompt_directly(images, options_map, precision_level, use_thinking=True, json_output=False):
     try:
         if not API_KEY:
              return "Error: ARK_API_KEY environment variable is missing. Please configure it in your deployment settings."
@@ -242,12 +242,20 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
         # Determine detail level
         word_count = "200"
         detail_instruction = "简明扼要"
+        min_length_instruction = ""
+        
         if precision_level == "2":
             word_count = "400"
             detail_instruction = "标准详细"
         elif precision_level == "3":
-            word_count = "1200"
-            detail_instruction = "极度详尽，显微镜级别的细节描述，包括材质纹理、光线微尘、背景微小物体等所有可见元素"
+            word_count = "1000" # Slightly reduced from 1200 to be more realistic for Flash model but still very high
+            detail_instruction = "极度详尽，显微镜级别的细节描述"
+            min_length_instruction = """
+            **【超精细模式强制执行协议】**：
+            1. **拒绝短句**：绝对禁止使用“光线柔和”这种短语！必须扩写为“光线如流动的液态黄金般柔和，在物体表面形成细腻的漫反射...”。
+            2. **细节堆砌**：对于每一个标签，你必须至少写出 3-5 个具体的视觉细节形容词。
+            3. **严禁过度联想**：虽然要求字数多，但必须**严格基于画面中实际存在的元素**进行深入描写！绝对禁止凭空捏造画面中不存在的物体、人物或背景！例如：如果画面只有一只苹果，你可以花1000字描写苹果的纹理、光泽、瑕疵、果梗的细节，但**绝对不能**联想出旁边有一把刀或一个人！
+            """
 
         # Aspect Definitions (Reused)
         aspect_prompts = {
@@ -267,11 +275,48 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
         # Build message content
         content = []
         
-        intro_text = f"""
-你是一个专业的AI艺术提示词生成专家。
-任务：请分析以下 {len(images)} 张图片，结合每张图片的【指定标签】，直接生成一个融合后的、高质量的Stable Diffusion中文提示词。
+        # Determine output format instructions
+        format_instruction = ""
+        if json_output:
+            format_instruction = """
+            **【JSON结构化输出模式开启】**
+            1. **必须严格输出合法的JSON格式**：
+               - 根对象必须是一个包含 `prompts` 键的对象。
+               - `prompts` 的值是一个键值对对象，键是标签名，值是描述内容。
+            2. **格式示例**：
+               ```json
+               {
+                 "prompts": {
+                   "构图": "...",
+                   "风格": "...",
+                   "人物动作": "..."
+                 }
+               }
+               ```
+            3. **严禁**：输出Markdown代码块标记（如 ```json ... ```），直接输出纯JSON字符串！
+            4. **严禁**：输出任何非JSON的内容（如开场白、备注）。
+            """
+        else:
+            format_instruction = """
+            **【自然语言融合模式开启】**
+            1. **输出格式**：
+               [Chinese]
+               (一段完整的、连贯的自然语言描述，不要带标签名！不要分行！)
+            2. **风格示例**：
+               "一个成年亚洲男性，留着黑色长发且略显凌乱，眉毛浓密...写实摄影风格，高清晰度，细腻的皮肤纹理，柔和的光线..."
+            3. **严禁**：
+               - **严禁出现“标签名：”的前缀**（如不要写“人物外貌：...”）。
+               - **严禁分行列表输出**，请融合成通顺的段落，用逗号或句号连接。
+               - 严禁输出JSON格式。
+            """
 
-**核心生成逻辑（必须严格遵守）：**
+        intro_text = f"""
+        你是一个专业的AI艺术提示词生成专家。
+        任务：请分析以下 {len(images)} 张图片，结合每张图片的【指定标签】，直接生成一个融合后的、高质量的Stable Diffusion中文提示词。
+        
+        {format_instruction}
+
+        **核心生成逻辑（必须严格遵守）：**
 1. **识别标签**：首先识别每张图片被打上的具体标签（如构图、背景等）。
 2. **生成单图描述**：针对每张图，只生成该图【标签要求描述的内容】。
    - **特别强调**：对于“构图”、“配色”、“摄像机角度”等抽象标签，**严禁**描述画面中具体的物体、人物或场景内容！必须使用“主体”、“物体”、“前景”、“背景”等抽象代词来代替具体名称。
@@ -302,20 +347,16 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
     - 如果多张图片都选了同一个标签，则对它们的内容进行融合。
     - 举例：如果图片1选了“人物动作”，图片2没选。即使图片2的人物动作很夸张，也必须忽略，最终画面只能采用图片1的动作！
   - 举例：如果图片1只选了“构图”，图片2只选了“配色”，那么最终画面应该是“图片1的构图 + 图片2的配色”，风格可以自由发挥或跟随图片2（如果有隐含风格）。
-- **详细程度**：{detail_instruction}（约{word_count}字）。
-  - **字数强制执行**：如果是“超精细”模式（1200字），你必须疯狂堆砌细节形容词！绝对不能只写几句短语就交差！必须把每一个标签都展开写成一段话！
-  - 例如“光影”不能只说“柔和自然光”，而要说“光线如丝绸般柔和，从左侧45度角倾泻而下，在皮肤表面形成细腻的漫反射，高光点集中在额头与鼻梁，阴影呈现出透明的琥珀色质感...”
+- **详细程度**：{detail_instruction}（目标约{word_count}字）。
+{min_length_instruction}
   - **再次强调**：即使字数很多，也**绝对严禁**使用“图片X”作为主语！
 - **输出格式**：
-   [Chinese]
-   (严格按照标签分类输出，每个标签一行)
-   标签名：描述内容
-   标签名：描述内容
-   ...
+   请根据上述【模式开启】的指示，严格遵守输出格式。
+   如果是JSON模式，必须输出合法JSON。
+   如果是自然语言模式，必须输出[Chinese]格式。
 
 **严厉约束**：
-- 只输出 [Chinese] 部分。
-- **格式强制**：必须是“标签名：描述”的键值对格式！
+- **格式强制**：必须严格遵守指定的格式！
 - 绝对禁止输出任何备注、解释、自我纠正或开场白！
 - 绝对禁止出现括号内有标注和画面不相关的内容。
 - 绝对禁止将推理和思考过程包含在输出中。
@@ -342,6 +383,7 @@ def generate_fused_prompt_directly(images, options_map, precision_level, use_thi
 5. **最终一致性检查**：如果图片1选了“背景”但没选“人物”，而你描述了图片1的人物，这就是严重的逻辑错误！必须删除！
 6. **沉默是金**：对于未选中的维度，直接保持沉默！如果用户只选了“摄像机角度”，你就只输出“摄像机角度：低角度仰拍”这几个字，除此之外哪怕一个标点符号都不要多写！
 7. **来源匿名化**：无论如何，都不能在输出中透露信息的来源图片！不能说“图1的...”或“图2的...”！
+8. **禁止幻觉（Hallucination Zero Tolerance）**：即使在“超精细”模式下，也**绝对禁止**凭空捏造画面中不存在的物体！所有细节描述必须是对**已有元素**的深入挖掘（如材质、光泽、纹理），而不是增加新的实体。
 
 **学习示例 (Examples) - 请模仿以下模式：**
 ---
@@ -456,6 +498,8 @@ def generate():
     precision = request.form.get('precision', '2')
     # Parse boolean from string "true"/"false"
     use_thinking = request.form.get('thinking', 'true').lower() == 'true'
+    # Parse json_output boolean
+    json_output = request.form.get('json_output', 'false').lower() == 'true'
     
     if not options_str:
         return jsonify({'error': 'No options provided'}), 400
@@ -469,29 +513,37 @@ def generate():
     individual_prompts = ["(Direct Fusion Mode - Individual analysis skipped)"] * len(images)
     
     try:
-        final_prompt_raw = generate_fused_prompt_directly(images, options_map, precision, use_thinking)
+        final_prompt_raw = generate_fused_prompt_directly(images, options_map, precision, use_thinking, json_output)
         
-        # Post-processing: Aggressively remove unwanted notes
-        import re
-        final_prompt = final_prompt_raw.replace("[Chinese]", "").strip()
-        
-        # Remove lines starting with (注 or (Note
-        final_prompt = re.sub(r'^\s*[\(（]注.*[\)）]', '', final_prompt, flags=re.MULTILINE)
-        
-        # Remove any bracketed content at the end if it looks like a note
-        final_prompt = re.sub(r'\n\s*[\(（].*?[\)）]\s*$', '', final_prompt, flags=re.DOTALL)
-        
-        # Remove specific headers like (中文) or (Chinese)
-        final_prompt = re.sub(r'^\s*[\(（](中文|Chinese|融合.*)[\)）]\s*', '', final_prompt, flags=re.IGNORECASE)
-        
-        # New Rule: If the ENTIRE prompt is wrapped in parentheses, remove them
-        # Matches: (CONTENT) or （CONTENT）
-        # We use dotall to match across newlines
-        match_wrapped = re.match(r'^\s*[\(（](.*)[\)）]\s*$', final_prompt, flags=re.DOTALL)
-        if match_wrapped:
-            final_prompt = match_wrapped.group(1).strip()
+        # Post-processing
+        if json_output:
+            # If JSON mode, try to extract JSON
+            import re
+            final_prompt = final_prompt_raw.strip()
+            # Remove markdown code blocks if any
+            final_prompt = re.sub(r'^```json\s*', '', final_prompt)
+            final_prompt = re.sub(r'\s*```$', '', final_prompt)
+            final_prompt = final_prompt.strip()
+        else:
+            # Natural Language Mode Processing
+            import re
+            final_prompt = final_prompt_raw.replace("[Chinese]", "").strip()
             
-        final_prompt = final_prompt.strip()
+            # Remove lines starting with (注 or (Note
+            final_prompt = re.sub(r'^\s*[\(（]注.*[\)）]', '', final_prompt, flags=re.MULTILINE)
+            
+            # Remove any bracketed content at the end if it looks like a note
+            final_prompt = re.sub(r'\n\s*[\(（].*?[\)）]\s*$', '', final_prompt, flags=re.DOTALL)
+            
+            # Remove specific headers like (中文) or (Chinese)
+            final_prompt = re.sub(r'^\s*[\(（](中文|Chinese|融合.*)[\)）]\s*', '', final_prompt, flags=re.IGNORECASE)
+            
+            # New Rule: If the ENTIRE prompt is wrapped in parentheses, remove them
+            match_wrapped = re.match(r'^\s*[\(（](.*)[\)）]\s*$', final_prompt, flags=re.DOTALL)
+            if match_wrapped:
+                final_prompt = match_wrapped.group(1).strip()
+            
+            final_prompt = final_prompt.strip()
         
     except Exception as e:
         error_str = str(e)
